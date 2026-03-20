@@ -184,29 +184,8 @@
 
     <!-- ── TAB: TAMPOS ── -->
     <div class="tab-content" id="tab-tampos">
-      <div class="page-header page-header-flex">
-        <div>
-          <div class="page-titulo">Tampos & Pedra</div>
-          <div class="page-sub">Catálogo completo com calculadora de obra integrada</div>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn-sec" id="btn-tampo-tab-cat" onclick="window.tampoSwitchTab('catalogo',this)">📋 Catálogo</button>
-          <button class="btn-sec" id="btn-tampo-tab-calc" onclick="window.tampoSwitchTab('calc',this)">🧮 Calculadora</button>
-        </div>
-      </div>
-      <div id="tampo-catalogo-wrap">
-        <div class="filter-chips" id="tampo-chips"></div>
-        <div class="search-bar">
-          <div class="search-wrap">
-            <span class="search-icon">⌕</span>
-            <input type="text" id="tampo-pesquisa" class="search-input" placeholder="Pesquisar por nome, fornecedor…" oninput="window.tampoRender()">
-          </div>
-        </div>
-        <div class="cards-grid" id="tampo-grid"></div>
-      </div>
-      <div id="tampo-calc-wrap" style="display:none">
-        <div id="tampo-calc-content"></div>
-      </div>
+      <div id="tampo-header"></div>
+      <div id="tampo-body"></div>
     </div>
 
     <!-- ── TAB: ELETROS ── -->

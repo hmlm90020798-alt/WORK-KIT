@@ -2,6 +2,7 @@
 // main.js · Work Kit · Hélder Melo
 // ════════════════════════════════════════════════
 
+import { tampoInit, switchTampoTab, TAMPOS_DB, ANIGRACO, TRANSPORTE } from './tampos.js';
 import { initializeApp }                                from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, doc, setDoc, getDoc, getDocs,
          collection, deleteDoc }                        from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -374,6 +375,7 @@ function gerarId() {
 }
 
 function toast(msg, dur = 2800) {
+  window.wkToast = toast;
   const t = document.getElementById('wk-toast');
   if (!t) return;
   t.textContent = msg; t.classList.add('show');
@@ -407,7 +409,9 @@ window.switchTab = function(tabId, btnEl) {
   // Inicializar módulos ao activar tab
   if (tabId === 'biblioteca') bibRender();
   if (tabId === 'checklists') chkRender();
-  if (tabId === 'tampos') tampoInit();
+  if (tabId === 'tampos') {
+    tampoInit();
+  }
   if (tabId === 'eletros') eletroRender();
   if (tabId === 'maoobra') moRender();
   if (tabId === 'cliente') cliRender();
@@ -750,149 +754,9 @@ window.chkAbrirNovo = function() {
 };
 
 // ════════════════════════════════════════════════
-// TAMPOS
+// TAMPOS — delegado para tampos.js
 // ════════════════════════════════════════════════
-function tampoInit() {
-  // Render chips
-  const cats = [...new Set(TAMPOS_DADOS.map(t => t.cat))];
-  const chips = document.getElementById('tampo-chips');
-  if (chips) {
-    chips.innerHTML = [{ id:'', nome:'Todos' }, ...cats.map(c => ({ id:c, nome:c }))]
-      .map(c => `<button class="chip ${ST.tampoCat === c.id ? 'active' : ''}"
-                         onclick="window.tampoFiltrar('${c.id}')">${c.nome}</button>`).join('');
-  }
-  tampoRender();
-}
-
-window.tampoFiltrar = function(cat) {
-  ST.tampoCat = cat;
-  tampoInit();
-};
-
-window.tampoRender = function() {
-  const pesquisa = (document.getElementById('tampo-pesquisa')?.value || '').toLowerCase().trim();
-  const filtrados = TAMPOS_DADOS.filter(t => {
-    const matchCat = !ST.tampoCat || t.cat === ST.tampoCat;
-    const matchPes = !pesquisa || t.nome.toLowerCase().includes(pesquisa) || t.cat.toLowerCase().includes(pesquisa) || t.fornecedor.toLowerCase().includes(pesquisa);
-    return matchCat && matchPes;
-  });
-
-  const grid = document.getElementById('tampo-grid');
-  if (!grid) return;
-
-  if (!filtrados.length) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🪨</div><div class="empty-titulo">Sem resultados</div></div>`;
-    return;
-  }
-
-  grid.innerHTML = filtrados.map(t => `
-    <div class="tampo-card">
-      <div class="tampo-card-grupo">${t.cat} · ${t.grupo}</div>
-      <div class="tampo-card-nome">${t.nome}</div>
-      <div class="tampo-card-forn">${t.fornecedor}</div>
-      <div class="tampo-card-preco">
-        <span class="tampo-card-c1">C1: ${fmt(t.c1)}</span>
-        <span>
-          <span class="tampo-card-pvp">${fmt(t.pvp)}</span>
-          <span class="tampo-card-unit"> / ${t.unit}</span>
-        </span>
-      </div>
-    </div>`).join('');
-};
-
-window.tampoSwitchTab = function(tab, btnEl) {
-  ST.tampoTab = tab;
-  document.querySelectorAll('[id^="btn-tampo-tab-"]').forEach(b => b.classList.remove('active'));
-  if (btnEl) btnEl.classList.add('active');
-  document.getElementById('tampo-catalogo-wrap').style.display = tab === 'catalogo' ? '' : 'none';
-  document.getElementById('tampo-calc-wrap').style.display = tab === 'calc' ? '' : 'none';
-  if (tab === 'calc') tampoRenderCalc();
-};
-
-function tampoRenderCalc() {
-  const ct = document.getElementById('tampo-calc-content'); if (!ct) return;
-
-  // Selecção de material
-  const cats = [...new Set(TAMPOS_DADOS.map(t => t.cat))];
-  ct.innerHTML = `
-    <div class="tampo-calc" style="max-width:680px">
-      <div class="tampo-calc-section">
-        <div class="tampo-calc-label">Material selecionado</div>
-        <select id="calc-material" class="f-select" style="background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.5);color:var(--ink);max-width:400px" onchange="window.tampoCalcUpdate()">
-          ${TAMPOS_DADOS.map(t => `<option value="${t.id}">${t.cat} — ${t.nome} (${fmt(t.pvp)}/m²)</option>`).join('')}
-        </select>
-      </div>
-      <div class="tampo-calc-section">
-        <div class="tampo-calc-label">Troços de tampo (comprimento × largura em cm)</div>
-        <div class="tampo-trocos" id="calc-trocos">
-          <div class="tampo-troco">
-            <input type="number" class="tampo-troco-input" placeholder="Comprimento (cm)" oninput="window.tampoCalcUpdate()">
-            <span class="tampo-troco-label">×</span>
-            <input type="number" class="tampo-troco-input" placeholder="Largura (cm)" oninput="window.tampoCalcUpdate()">
-            <button class="bib-card-btn" onclick="this.closest('.tampo-troco').remove();window.tampoCalcUpdate()">×</button>
-          </div>
-        </div>
-        <button class="btn-sec" style="margin-top:8px" onclick="window.tampoAddTroco()">+ Adicionar troço</button>
-      </div>
-      <div class="tampo-calc-section">
-        <div class="tampo-calc-label">Acabamentos / Extras</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px">
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.8);cursor:pointer">
-            <input type="checkbox" id="calc-bica" onchange="window.tampoCalcUpdate()"> Entalhe bica (+€30)
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.8);cursor:pointer">
-            <input type="checkbox" id="calc-esquadria" onchange="window.tampoCalcUpdate()"> Corte em esquadria (+€20)
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.8);cursor:pointer">
-            <input type="checkbox" id="calc-transporte" onchange="window.tampoCalcUpdate()" checked> Transporte e montagem (+€80)
-          </label>
-        </div>
-      </div>
-      <div class="tampo-summary" id="calc-summary">
-        <div style="font-size:11px;color:rgba(122,46,10,.6);margin-bottom:6px">TOTAL ESTIMADO</div>
-        <div class="tampo-summary-total" id="calc-total">—</div>
-        <div style="font-size:11px;color:rgba(122,46,10,.6);margin-top:4px" id="calc-detalhe"></div>
-      </div>
-    </div>`;
-  tampoCalcUpdate();
-}
-
-window.tampoAddTroco = function() {
-  const ct = document.getElementById('calc-trocos'); if (!ct) return;
-  const d = document.createElement('div');
-  d.className = 'tampo-troco';
-  d.innerHTML = `
-    <input type="number" class="tampo-troco-input" placeholder="Comprimento (cm)" oninput="window.tampoCalcUpdate()">
-    <span class="tampo-troco-label">×</span>
-    <input type="number" class="tampo-troco-input" placeholder="Largura (cm)" oninput="window.tampoCalcUpdate()">
-    <button class="bib-card-btn" onclick="this.closest('.tampo-troco').remove();window.tampoCalcUpdate()">×</button>`;
-  ct.appendChild(d);
-};
-
-window.tampoCalcUpdate = function() {
-  const matId = document.getElementById('calc-material')?.value;
-  const mat = TAMPOS_DADOS.find(t => t.id === matId);
-  if (!mat) return;
-
-  let totalM2 = 0;
-  document.querySelectorAll('.tampo-troco').forEach(row => {
-    const [c, l] = Array.from(row.querySelectorAll('input')).map(i => parseFloat(i.value) || 0);
-    if (c > 0 && l > 0) totalM2 += (c / 100) * (l / 100);
-  });
-
-  let extras = 0;
-  if (document.getElementById('calc-bica')?.checked)       extras += 30;
-  if (document.getElementById('calc-esquadria')?.checked)  extras += 20;
-  if (document.getElementById('calc-transporte')?.checked) extras += 80;
-
-  const pvpMat = totalM2 * mat.pvp;
-  const total  = pvpMat + extras;
-
-  const totalEl   = document.getElementById('calc-total');
-  const detalheEl = document.getElementById('calc-detalhe');
-  if (totalEl)   totalEl.textContent   = fmt(total);
-  if (detalheEl) detalheEl.textContent = `${totalM2.toFixed(2)}m² × ${fmt(mat.pvp)}/m² = ${fmt(pvpMat)} + extras ${fmt(extras)}`;
-};
+// Funções expostas via window.* em tampos.js
 
 // ════════════════════════════════════════════════
 // ELETRODOMÉSTICOS
