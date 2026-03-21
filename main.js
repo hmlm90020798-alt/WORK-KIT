@@ -22,6 +22,9 @@ const _app  = initializeApp(_cfg);
 const _db   = getFirestore(_app);
 const _auth = getAuth(_app);
 
+// Expor _db para módulos externos (tampos.js)
+window._wkDb = _db;
+
 // ── Collections ───────────────────────────────────────────────────
 const COL_BIB = collection(_db, 'wk_biblioteca');
 const COL_CHK = collection(_db, 'wk_checklists');

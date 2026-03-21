@@ -3,6 +3,11 @@
 // Catálogo Anigraco — Tampos & Pedra
 // ════════════════════════════════════════════════
 
+// ── Firebase — importado do contexto da app ─────────
+// _db é injectado via window._wkDb pelo main.js
+function getDb() { return window._wkDb || null; }
+import { doc, setDoc, getDocs, collection } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
 // ── Fornecedor ────────────────────────────────────
 export const ANIGRACO = {
   nome: 'ANIGRACO',
@@ -29,19 +34,19 @@ const ACB_SILESTONE = [
   { id: 'rodatampo',  nome: 'Rodatampo',             unid: 'ml', c1: 1320,  pvp: 24  },
   { id: 'cortebruto', nome: 'Corte Bruto',            unid: 'un', c1: 1260,  pvp: 23  },
   { id: 'rebaixo',    nome: 'Rebaixo à Face',          unid: 'un', c1: 4410,  pvp: 80  },
-  { id: 'polido',     nome: 'Transformação Polido',    unid: 'un', c1: 35,    pvp: 56  },
+  { id: 'polido',     nome: 'Transformação Polido',    unid: 'un', c1: 3500,  pvp: 56  },
   { id: 'furo',       nome: 'Furo',                   unid: 'un', c1: 950,   pvp: 17  },
   { id: 'esquadria',  nome: 'Corte ½ Esquadria',       unid: 'un', c1: 2310,  pvp: 47  },
-  { id: 'silicone',   nome: 'Silicone',               unid: 'un', c1: 10,    pvp: 18  },
+  { id: 'silicone',   nome: 'Silicone',               unid: 'un', c1: 1000,  pvp: 18  },
 ];
 const ACB_COMPAC = [
   { id: 'rodatampo',  nome: 'Rodatampo',             unid: 'ml', c1: 1320,  pvp: 24  },
   { id: 'cortebruto', nome: 'Corte Bruto',            unid: 'un', c1: 1260,  pvp: 26  },
   { id: 'rebaixo',    nome: 'Rebaixo à Face',          unid: 'un', c1: 4410,  pvp: 90  },
-  { id: 'polido',     nome: 'Transformação Polido',    unid: 'un', c1: 35,    pvp: 56  },
+  { id: 'polido',     nome: 'Transformação Polido',    unid: 'un', c1: 3500,  pvp: 56  },
   { id: 'furo',       nome: 'Furo',                   unid: 'un', c1: 950,   pvp: 19  },
   { id: 'esquadria',  nome: 'Corte ½ Esquadria',       unid: 'un', c1: 2310,  pvp: 47  },
-  { id: 'silicone',   nome: 'Silicone',               unid: 'un', c1: 10,    pvp: 18  },
+  { id: 'silicone',   nome: 'Silicone',               unid: 'un', c1: 1000,  pvp: 18  },
 ];
 const ACB_DEKTON = [
   { id: 'rodatampo',  nome: 'Rodatampo',             unid: 'ml', c1: 3200,  pvp: 59  },
@@ -50,7 +55,7 @@ const ACB_DEKTON = [
   { id: 'polido',     nome: 'Transformação Polido',    unid: 'un', c1: 5000,  pvp: 90  },
   { id: 'furo',       nome: 'Furo',                   unid: 'un', c1: 1260,  pvp: 26  },
   { id: 'esquadria',  nome: 'Corte ½ Esquadria',       unid: 'un', c1: 2840,  pvp: 58  },
-  { id: 'silicone',   nome: 'Silicone',               unid: 'un', c1: 10,    pvp: 18  },
+  { id: 'silicone',   nome: 'Silicone',               unid: 'un', c1: 1000,  pvp: 18  },
 ];
 
 // ── Base de dados completa ────────────────────────
@@ -164,6 +169,7 @@ export const TAMPOS_DB = {
   Dekton: {
     cor: '#2A2A3A', acabamentos: ACB_DEKTON,
     espessuras: ['2cm', '1.2cm'],
+    grupos: ['P', 'G0', 'G1', 'G2', 'G3'],
     artigos: [
       { grupo: 'P',  nome: 'Keena',         c1: { '2cm': 26584, '1.2cm': 21952 }, pvp: { '2cm': 467, '1.2cm': 386 } },
       { grupo: 'P',  nome: 'Marina',        c1: { '2cm': 26584, '1.2cm': 21952 }, pvp: { '2cm': 467, '1.2cm': 386 } },
@@ -235,6 +241,8 @@ let TS = {
   material:      'Silestone',
   grupoFiltro:   '',
   pesquisa:      '',
+  pvpMin:        null,
+  pvpMax:        null,
   // Calculadora
   calc: {
     material:    'Silestone',
@@ -286,10 +294,37 @@ function copiar(txt, btn) {
 // ════════════════════════════════════════════════
 // INIT PRINCIPAL
 // ════════════════════════════════════════════════
-export function tampoInit() {
+export async function tampoInit() {
+  await tampoCarregarOverrides();
   renderTampoHeader();
   renderTampoTabs();
   switchTampoTab(TS.tab);
+}
+
+async function tampoCarregarOverrides() {
+  const db = getDb();
+  if (!db) return;
+  try {
+    const snap = await getDocs(collection(db, 'wk_tampos_overrides'));
+    snap.forEach(d => {
+      const data = d.data();
+      const mat  = TAMPOS_DB[data.material];
+      if (!mat) return;
+      // Encontrar artigo pelo índice ou pelo nome
+      let artigo = mat.artigos[data.idx];
+      if (!artigo || artigo.nome !== data.nome) {
+        artigo = mat.artigos.find(a => a.nome === data.nome);
+      }
+      if (!artigo) return;
+      // Aplicar override
+      artigo.nome     = data.nome;
+      artigo.grupo    = data.grupo;
+      artigo.consulta = data.consulta;
+      if (data.c1)  artigo.c1  = { ...artigo.c1,  ...data.c1  };
+      if (data.pvp) artigo.pvp = { ...artigo.pvp, ...data.pvp };
+    });
+    console.log('Tampos: overrides carregados do Firebase');
+  } catch(e) { console.warn('Tampos: erro ao carregar overrides:', e); }
 }
 
 function renderTampoHeader() {
@@ -398,6 +433,21 @@ function renderCatalogo() {
             <button class="chip ${TS.grupoFiltro === g ? 'active' : ''}"
                     onclick="window.tampoFiltroGrupo('${g}')">${g}</button>`).join('')}
         </div>` : ''}
+      <!-- Filtro de preço -->
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">PVP/m²:</span>
+        ${[
+          { label:'Todos', min:null, max:null },
+          { label:'até 400€', min:null, max:400 },
+          { label:'400–600€', min:400, max:600 },
+          { label:'600–800€', min:600, max:800 },
+          { label:'> 800€',   min:800, max:null },
+        ].map(f => `
+          <button class="chip ${TS.pvpMin===f.min && TS.pvpMax===f.max ? 'active' : ''}"
+            onclick="window.tampoPvpFiltro(${f.min},${f.max})">
+            ${f.label}
+          </button>`).join('')}
+      </div>
     </div>
 
     <!-- Info + pesquisa com X -->
@@ -418,10 +468,14 @@ function renderCatalogo() {
 function renderCatalogGrid() {
   const mat   = TAMPOS_DB[TS.material];
   const pesq  = TS.pesquisa.toLowerCase().trim();
+  const esp0 = mat.espessuras[0];
   const artigos = mat.artigos.filter(a => {
     const matchGrupo = !TS.grupoFiltro || a.grupo === TS.grupoFiltro;
     const matchPesq  = !pesq || a.nome.toLowerCase().includes(pesq);
-    return matchGrupo && matchPesq;
+    const pvp = a.pvp?.[esp0] || 0;
+    const matchMin   = TS.pvpMin === null || pvp >= TS.pvpMin;
+    const matchMax   = TS.pvpMax === null || pvp <= TS.pvpMax;
+    return matchGrupo && matchPesq && matchMin && matchMax && !a.consulta;
   });
 
   const info = document.getElementById('tampo-info-bar');
@@ -492,9 +546,10 @@ function renderCardTampo(a, mat) {
     </div>`;
 }
 
-window.tampoSelectMaterial = function(m) { TS.material = m; TS.grupoFiltro = ''; TS.pesquisa = ''; renderCatalogo(); };
+window.tampoSelectMaterial = function(m) { TS.material = m; TS.grupoFiltro = ''; TS.pesquisa = ''; TS.pvpMin = null; TS.pvpMax = null; renderCatalogo(); };
 window.tampoFiltroGrupo    = function(g) { TS.grupoFiltro = g; renderCatalogGrid(); };
 window.tampoPesquisar      = function(v) { TS.pesquisa = v; renderCatalogGrid(); };
+window.tampoPvpFiltro      = function(min, max) { TS.pvpMin = min; TS.pvpMax = max; renderCatalogo(); };
 window.tampoClearPesquisa  = function() {
   TS.pesquisa = '';
   const inp = document.getElementById('tampo-pesquisa-input');
@@ -749,7 +804,8 @@ function renderResumoCalc() {
   const m2Tampo = calcTotalM2(TS.calc.pecas);
   const m2Rev   = calcTotalM2(TS.calc.revestimento);
   const pvpTampo= artigo ? (artigo.pvp[esp] || 0) * m2Tampo : 0;
-  const pvpRev  = artigo ? (artigo.pvp[esp] || 0) * m2Rev   : 0;
+  const espRevAtual = TS.calc.espRev && artigo?.pvp[TS.calc.espRev] ? TS.calc.espRev : esp;
+  const pvpRev  = artigo ? (artigo.pvp[espRevAtual] || 0) * m2Rev : 0;
 
   let pvpAcb = 0;
   let linhasAcb = '';
@@ -821,9 +877,9 @@ function renderResumoCalc() {
             ${m2Rev > 0 ? `
               <div style="display:grid;grid-template-columns:1fr 90px 90px;gap:4px;padding:4px 0;font-size:11px;align-items:center">
                 <span style="color:var(--t3)">Revestimento ${m2Rev.toFixed(4)}m²</span>
-                <button onclick="window.copiar('${artigo.c1[TS.calc.espRev || esp]}',this)"
+                <button onclick="window.copiar(String(artigo.c1[TS.calc.espRev] || artigo.c1[esp] || ''),this)"
                   style="font-family:var(--mono);font-size:11px;font-weight:700;text-align:right;background:none;border:none;color:rgba(255,190,152,.6);cursor:pointer;padding:0">
-                  ${fmtC1(artigo.c1[TS.calc.espRev || esp])} ⎘
+                  ${fmtC1(artigo.c1[TS.calc.espRev] || artigo.c1[esp])} ⎘
                 </button>
                 <span style="font-family:var(--mono);color:var(--t2);text-align:right">${fmtPVP(pvpRev)}</span>
               </div>` : ''}
@@ -1294,7 +1350,7 @@ window.tampoEditar = function(nome, material) {
   setTimeout(() => document.getElementById('edit-nome')?.focus(), 100);
 };
 
-window.tampoGuardarEdicao = function(material, idx) {
+window.tampoGuardarEdicao = async function(material, idx) {
   const mat    = TAMPOS_DB[material];
   const artigo = mat.artigos[idx];
   const esps   = mat.espessuras;
@@ -1311,9 +1367,27 @@ window.tampoGuardarEdicao = function(material, idx) {
     if (!isNaN(pvpv)) artigo.pvp[e] = pvpv;
   });
 
+  // Persistir no Firebase
+  const db = getDb();
+  if (db) {
+    try {
+      const id = material + '_' + artigo.nome.replace(/[^a-zA-Z0-9]/g, '_');
+      await setDoc(doc(db, 'wk_tampos_overrides', id), {
+        material,
+        idx,
+        nome:     artigo.nome,
+        grupo:    artigo.grupo || '',
+        c1:       artigo.c1,
+        pvp:      artigo.pvp,
+        consulta: artigo.consulta || false,
+        ts:       Date.now(),
+      });
+    } catch(e) { console.error('Erro ao guardar tampo:', e); }
+  }
+
   document.getElementById('tampo-modal-editar')?.remove();
   renderCatalogGrid();
-  window.wkToast('✓ Artigo actualizado');
+  window.wkToast('✓ Artigo guardado');
 };
 
 // ════════════════════════════════════════════════
