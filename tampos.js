@@ -513,9 +513,16 @@ function renderCatalogo() {
       </div>
     </div>
 
-    <!-- Info + pesquisa com X -->
+    <!-- Info + pesquisa com X + botão adicionar -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div class="bib-info" style="margin:0" id="tampo-info-bar"></div>
+      <button onclick="window.tampoNovoArtigo('${TS.material}')"
+        style="display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;
+        background:rgba(58,122,68,.12);border:1px solid rgba(58,122,68,.25);
+        color:rgba(150,220,150,.7);font-family:var(--sans);font-size:11px;font-weight:700;
+        cursor:pointer;transition:all .15s;white-space:nowrap">
+        + Novo artigo
+      </button>
     </div>
 
     <!-- Grid de cards -->
@@ -1642,13 +1649,26 @@ window.compLimparTudo = function() {
 // ════════════════════════════════════════════════
 // EDITAR ARTIGO DE TAMPO
 // ════════════════════════════════════════════════
+window.tampoNovoArtigo = function(material) {
+  // Artigo vazio para criação
+  const mat  = TAMPOS_DB[material];
+  const vazio = { nome: '', grupo: '', c1: {}, pvp: {}, consulta: false, _novo: true };
+  mat.espessuras.forEach(e => { vazio.c1[e] = null; vazio.pvp[e] = null; });
+  _abrirModalTampo(material, -1, vazio);
+};
+
 window.tampoEditar = function(nome, material) {
   const mat    = TAMPOS_DB[material];
   const idx    = mat.artigos.findIndex(a => a.nome === nome);
   const artigo = mat.artigos[idx];
   if (!artigo) return;
 
-  // Criar modal de edição
+  _abrirModalTampo(material, idx, artigo);
+};
+
+function _abrirModalTampo(material, idx, artigo) {
+  const mat = TAMPOS_DB[material];
+  // Criar modal
   let modal = document.getElementById('tampo-modal-editar');
   if (!modal) {
     modal = document.createElement('div');
@@ -1678,8 +1698,8 @@ window.tampoEditar = function(nome, material) {
 
       <div style="padding:20px 22px 16px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between">
         <div>
-          <div style="font-family:Georgia,serif;font-size:18px;color:var(--t1)">Editar Artigo</div>
-          <div style="font-size:11px;color:var(--t4);margin-top:2px">${material} · ${artigo.grupo || ''}</div>
+          <div style="font-family:Georgia,serif;font-size:18px;color:var(--t1)">${artigo._novo ? 'Novo Artigo' : 'Editar Artigo'}</div>
+          <div style="font-size:11px;color:var(--t4);margin-top:2px">${material}${artigo.grupo ? ' · ' + artigo.grupo : ''}</div>
         </div>
         <button onclick="document.getElementById('tampo-modal-editar').remove()"
           style="background:none;border:none;font-size:20px;color:var(--t4);cursor:pointer">×</button>
@@ -1721,7 +1741,7 @@ window.tampoEditar = function(nome, material) {
         </button>
         <button onclick="window.tampoGuardarEdicao('${material}',${idx})"
           style="padding:9px 20px;border-radius:8px;background:rgba(196,97,42,.15);border:1px solid rgba(196,97,42,.3);color:rgba(255,190,152,.85);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer">
-          Guardar
+          ${artigo._novo ? 'Criar artigo' : 'Guardar'}
         </button>
       </div>
     </div>`;
@@ -1731,13 +1751,24 @@ window.tampoEditar = function(nome, material) {
 };
 
 window.tampoGuardarEdicao = async function(material, idx) {
-  const mat    = TAMPOS_DB[material];
-  const artigo = mat.artigos[idx];
-  const esps   = mat.espessuras;
+  const mat  = TAMPOS_DB[material];
+  const esps = mat.espessuras;
+  const novo = idx === -1; // modo criação
 
-  artigo.nome    = document.getElementById('edit-nome')?.value?.trim() || artigo.nome;
-  artigo.grupo   = document.getElementById('edit-grupo')?.value?.trim() || artigo.grupo;
+  // Criar novo artigo ou editar existente
+  let artigo;
+  if (novo) {
+    artigo = { nome: '', grupo: '', c1: {}, pvp: {}, consulta: false, _novo: true };
+    esps.forEach(e => { artigo.c1[e] = null; artigo.pvp[e] = null; });
+  } else {
+    artigo = mat.artigos[idx];
+  }
+
+  artigo.nome    = document.getElementById('edit-nome')?.value?.trim() || '';
+  artigo.grupo   = document.getElementById('edit-grupo')?.value?.trim() || '';
   artigo.consulta= document.getElementById('edit-consulta')?.checked || false;
+
+  if (!artigo.nome) { window.wkToast('⚠️ Nome obrigatório'); return; }
 
   esps.forEach(e => {
     const key = e.replace('.','_');
@@ -1746,6 +1777,12 @@ window.tampoGuardarEdicao = async function(material, idx) {
     if (!isNaN(c1v))  artigo.c1[e]  = c1v;
     if (!isNaN(pvpv)) artigo.pvp[e] = pvpv;
   });
+
+  if (novo) {
+    delete artigo._novo;
+    mat.artigos.push(artigo);
+    idx = mat.artigos.length - 1;
+  }
 
   // Persistir no Firebase
   const db = getDb();
@@ -1767,7 +1804,7 @@ window.tampoGuardarEdicao = async function(material, idx) {
 
   document.getElementById('tampo-modal-editar')?.remove();
   renderCatalogGrid();
-  window.wkToast('✓ Artigo guardado');
+  window.wkToast(novo ? '✓ Artigo criado' : '✓ Artigo actualizado');
 };
 
 // ════════════════════════════════════════════════
