@@ -145,7 +145,30 @@ async function carregarOverrides() {
   const db = getDb(); if (!db) return;
   try {
     const snap = await getDocs(collection(db, 'wk_eletros_overrides'));
-    snap.forEach(d => { _overrides[d.id] = d.data(); });
+    snap.forEach(d => {
+      const data = d.data();
+      _overrides[d.id] = data;
+
+      // Se o override tem mudança de tipo, mover artigo no DB em memória
+      if (data.tipo) {
+        // Encontrar onde o artigo está actualmente
+        let artigoEncontrado = null, tipoActual = null;
+        ELETRO_DB.forEach(t => {
+          const a = t.artigos.find(a => a.ref === d.id);
+          if (a) { artigoEncontrado = a; tipoActual = t.tipo; }
+        });
+
+        if (artigoEncontrado && tipoActual !== data.tipo) {
+          // Mover para o tipo correcto
+          const tOrig = ELETRO_DB.find(t => t.tipo === tipoActual);
+          if (tOrig) tOrig.artigos = tOrig.artigos.filter(a => a.ref !== d.id);
+          const tNovo = ELETRO_DB.find(t => t.tipo === data.tipo);
+          if (tNovo && !tNovo.artigos.find(a => a.ref === d.id)) {
+            tNovo.artigos.push({ ...artigoEncontrado });
+          }
+        }
+      }
+    });
   } catch(e) { console.warn('eletros: overrides', e); }
 }
 async function guardarOverride(ref, dados) {
@@ -345,50 +368,64 @@ function renderCardEletro(a) {
   const noOrc      = ES.orc.some(x => x.ref === a.ref);
   const isMelhor   = (a.detalhes||'').includes('★');
   const detAberto  = ES.detalheAberto === a.ref;
+  const temUrl     = !!(a.url);
 
   return `
-    <div class="tampo-card" style="display:flex;flex-direction:column;gap:8px;
+    <div class="tampo-card" style="display:flex;flex-direction:column;gap:8px;position:relative;
       ${noOrc    ?'border-color:rgba(58,122,68,.4);background:rgba(58,122,68,.04);':''}
       ${detAberto?'border-color:rgba(196,97,42,.45);':''}">
 
-      <div style="display:flex;align-items:center;justify-content:space-between">
+      <!-- Link ↗ no canto superior direito — sempre visível se existir URL -->
+      ${temUrl ? `
+        <a href="${a.url}" target="_blank" rel="noopener"
+          style="position:absolute;top:10px;right:10px;z-index:2;
+          width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+          background:rgba(196,97,42,.12);border:1px solid rgba(196,97,42,.25);
+          color:rgba(255,190,152,.7);font-size:12px;text-decoration:none;
+          transition:all .15s;line-height:1" title="Ver em leroymerlin.pt">↗</a>` : ''}
+
+      <!-- Topo: tipo badge (com margem direita se tiver link) -->
+      <div style="display:flex;align-items:center;justify-content:space-between;${temUrl?'padding-right:32px':''}">
         <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
           padding:2px 8px;border-radius:99px;background:${a._cor}18;border:1px solid ${a._cor}33;color:${a._cor}">
           ${a._icon} ${a._tipo}${a._essencial?' ⭐':''}
         </span>
-        ${isMelhor?`<span style="font-size:9px;font-weight:700;color:rgba(255,190,152,.5)">★ Melhor escolha</span>`:'<span></span>'}
+        ${isMelhor?`<span style="font-size:9px;font-weight:700;color:rgba(255,190,152,.5)">★ Melhor escolha</span>`:''}
       </div>
 
+      <!-- Nome + marca -->
       <div>
         <div style="font-size:13px;font-weight:600;color:var(--t1);line-height:1.3">${a.nome}</div>
         <div style="font-size:10px;color:var(--t4);margin-top:1px;font-weight:700;letter-spacing:.06em">${a.marca||''}</div>
       </div>
 
+      <!-- Características -->
       ${a.caract?`<div style="font-size:10px;color:var(--t3);line-height:1.5;border-top:1px solid rgba(255,255,255,.05);padding-top:6px">${a.caract}</div>`:''}
 
+      <!-- Ref + preço -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding-top:6px;border-top:1px solid rgba(255,255,255,.06)">
         <div style="display:flex;align-items:center;gap:4px">
           <span style="font-family:var(--mono);font-size:10px;color:var(--t4)">Ref ${a.ref}</span>
           <button onclick="window.eletrosCopiarRef('${a.ref}',this)"
             style="padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:var(--t4);font-size:9px;cursor:pointer">⎘</button>
-          <a href="https://www.leroymerlin.pt/pesquisa/${a.ref}" target="_blank"
-            style="padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:var(--t4);font-size:9px;text-decoration:none">↗</a>
         </div>
         <span style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--t1)">${fmt(a.preco)}</span>
       </div>
 
-      <!-- Botões: ℹ Detalhes · ✏️ Editar · + Orçamento -->
+      <!-- Botões: ℹ︎ · ✏️ · + Orçamento -->
       <div style="display:flex;gap:5px;margin-top:2px">
         <button onclick="window.eletroToggleDetalhe('${a.ref}')"
-          style="padding:6px 9px;border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;
+          title="Ver detalhes"
+          style="padding:6px 9px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;
           ${detAberto
             ?'background:rgba(196,97,42,.2);border:1px solid rgba(196,97,42,.4);color:rgba(255,190,152,.9)'
             :'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--t3)'}">
           ℹ︎
         </button>
         <button onclick="window.eletroEditarArtigo('${a.ref}')"
+          title="Editar artigo"
           style="padding:6px 9px;border-radius:7px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
-          color:var(--t4);font-size:11px;cursor:pointer;transition:all .15s" title="Editar">✏️</button>
+          color:var(--t4);font-size:11px;cursor:pointer;transition:all .15s">✏️</button>
         <button onclick="window.eletroToggleOrc('${a.ref}')"
           style="flex:1;padding:6px 8px;border-radius:7px;font-family:var(--sans);font-size:10px;font-weight:700;cursor:pointer;transition:all .18s;
           ${noOrc
@@ -445,11 +482,19 @@ window.eletroToggleDetalhe = function(ref) {
         background:rgba(196,97,42,.12);border:1px solid rgba(196,97,42,.25);color:rgba(255,190,152,.8)">
         ${noOrc?'× Remover do Orçamento':'+ Adicionar ao Orçamento'}
       </button>
-      <button onclick="window.eletrosCopiarRef('${artigo.ref}',this)"
-        style="padding:7px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-        color:var(--t3);font-family:var(--sans);font-size:11px;cursor:pointer">
-        ⎘ Copiar Ref ${artigo.ref}
-      </button>
+      <div style="display:flex;gap:6px">
+        <button onclick="window.eletrosCopiarRef('${artigo.ref}',this)"
+          style="flex:1;padding:7px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+          color:var(--t3);font-family:var(--sans);font-size:11px;cursor:pointer">
+          ⎘ Copiar Ref ${artigo.ref}
+        </button>
+        ${artigo.url ? `
+        <a href="${artigo.url}" target="_blank" rel="noopener"
+          style="padding:7px 12px;border-radius:8px;background:rgba(196,97,42,.1);border:1px solid rgba(196,97,42,.2);
+          color:rgba(255,190,152,.7);font-family:var(--sans);font-size:11px;text-decoration:none;display:flex;align-items:center;gap:4px">
+          ↗ Ver LM
+        </a>` : ''}
+      </div>
     </div>`;
 
   painel.style.display = 'flex';
@@ -515,6 +560,10 @@ function abrirModalEletro(artigo, isNovo) {
             <input id="em-preco" type="number" class="f-input" value="${artigo.preco||''}" placeholder="0.00" step="0.01" min="0">
           </div>
           <div class="form-campo full">
+            <label class="form-label">Link LM (URL)</label>
+            <input id="em-url" class="f-input" value="${(artigo.url||'').replace(/"/g,'&quot;')}" placeholder="https://www.leroymerlin.pt/…" type="url">
+          </div>
+          <div class="form-campo full">
             <label class="form-label">Características (separar por ·)</label>
             <input id="em-caract" class="f-input" value="${(artigo.caract||'').replace(/"/g,'&quot;')}" placeholder="Ex: 4 zonas · 7kW · Booster">
           </div>
@@ -535,32 +584,55 @@ function abrirModalEletro(artigo, isNovo) {
       </div>
       <div class="modal-footer">
         <button class="btn-cancelar" onclick="document.getElementById('eletro-modal-edit').remove()">Cancelar</button>
-        <button class="btn-guardar" onclick="window.eletroGuardarArtigo('${artigo.ref||''}',${isNovo})">Guardar</button>
+        <button class="btn-guardar" onclick="window.eletroGuardarArtigo('${artigo.ref||''}','${artigo._tipo||''}',${isNovo})">Guardar</button>
       </div>
     </div>`;
   document.body.appendChild(m);
   setTimeout(() => document.getElementById('em-nome')?.focus(), 80);
 }
 
-window.eletroGuardarArtigo = async function(refOriginal, isNovo) {
-  const nome    = document.getElementById('em-nome')?.value.trim();
-  const refInp  = document.getElementById('em-ref')?.value.trim();
-  const ref     = isNovo ? refInp : refOriginal;
-  const tipo    = document.getElementById('em-tipo')?.value;
-  const marca   = document.getElementById('em-marca')?.value.trim();
-  const preco   = parseFloat(document.getElementById('em-preco')?.value) || 0;
-  const caract  = document.getElementById('em-caract')?.value.trim();
-  const detalhes= document.getElementById('em-detalhes')?.value.trim();
+window.eletroGuardarArtigo = async function(refOriginal, tipoOriginal, isNovo) {
+  const nome     = document.getElementById('em-nome')?.value.trim();
+  const refInp   = document.getElementById('em-ref')?.value.trim();
+  const ref      = isNovo ? refInp : refOriginal;
+  const tipoNovo = document.getElementById('em-tipo')?.value;
+  const marca    = document.getElementById('em-marca')?.value.trim();
+  const preco    = parseFloat(document.getElementById('em-preco')?.value) || 0;
+  const url      = document.getElementById('em-url')?.value.trim();
+  const caract   = document.getElementById('em-caract')?.value.trim();
+  const detalhes = document.getElementById('em-detalhes')?.value.trim();
 
   if (!nome) { toast('⚠️ Nome obrigatório'); return; }
   if (!ref)  { toast('⚠️ Referência LM obrigatória'); return; }
 
   if (isNovo) {
-    const t = ELETRO_DB.find(t => t.tipo === tipo) || ELETRO_DB.find(t => t.tipo === 'Outros');
-    if (t) t.artigos.push({ ref, nome, marca, preco, caract, detalhes, nota:'' });
+    // Novo artigo — adicionar ao tipo seleccionado
+    const t = ELETRO_DB.find(t => t.tipo === tipoNovo) || ELETRO_DB.find(t => t.tipo === 'Outros');
+    if (t) t.artigos.push({ ref, nome, marca, preco, url, caract, detalhes, nota:'' });
+  } else {
+    // Editar existente — se o tipo mudou, mover o artigo entre tipos
+    if (tipoNovo !== tipoOriginal) {
+      // Remover do tipo original
+      const tOrig = ELETRO_DB.find(t => t.tipo === tipoOriginal);
+      if (tOrig) tOrig.artigos = tOrig.artigos.filter(a => a.ref !== ref);
+      // Adicionar ao novo tipo
+      const tNovo = ELETRO_DB.find(t => t.tipo === tipoNovo) || ELETRO_DB.find(t => t.tipo === 'Outros');
+      if (tNovo) tNovo.artigos.push({ ref, nome, marca, preco, url, caract, detalhes, nota:'' });
+    } else {
+      // Mesmo tipo — actualizar in-place
+      const t = ELETRO_DB.find(t => t.tipo === tipoNovo);
+      if (t) {
+        const a = t.artigos.find(a => a.ref === ref);
+        if (a) Object.assign(a, { nome, marca, preco, url, caract, detalhes });
+      }
+    }
+    // Actualizar no orçamento se estiver lá
+    const noOrc = ES.orc.find(x => x.ref === ref);
+    if (noOrc) Object.assign(noOrc, { nome, marca, preco, url, _tipo: tipoNovo });
   }
 
-  await guardarOverride(ref, { nome, marca, preco, caract, detalhes });
+  // Persistir override com tipo incluído
+  await guardarOverride(ref, { nome, marca, preco, url, caract, detalhes, tipo: tipoNovo });
   document.getElementById('eletro-modal-edit')?.remove();
   renderCatalogoGrid();
   toast(isNovo ? '✓ Artigo adicionado' : '✓ Artigo actualizado');
