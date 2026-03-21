@@ -460,7 +460,7 @@ window.bibAbrirNovo = function() {
   ['bib-f-nome','bib-f-ref','bib-f-preco','bib-f-tags','bib-f-url','bib-f-notas'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
-  document.getElementById('modal-bib').classList.add('active');
+  document.getElementById('modal-bib').classList.add('open');
 };
 
 window.bibEditar = function(id) {
@@ -478,11 +478,11 @@ window.bibEditar = function(id) {
   document.getElementById('bib-f-tags').value    = item.tags    || '';
   document.getElementById('bib-f-url').value     = item.url     || '';
   document.getElementById('bib-f-notas').value   = item.notas   || '';
-  modal.classList.add('active');
+  modal.classList.add('open');
 };
 
 window.bibFecharModal = function() {
-  document.getElementById('modal-bib').classList.remove('active');
+  document.getElementById('modal-bib').classList.remove('open');
   ST.bibEditId = null;
   ST.bibEditTs = null;
 };

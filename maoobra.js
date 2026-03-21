@@ -427,21 +427,29 @@ export const MO_SECCAO_ORDEM = [
 ];
 
 // PERSISTÊNCIA — FIREBASE
-// Guarda/carrega orçamento MO no Firestore
 // ════════════════════════════════════════════════
-const MO_DOC_ID = 'wk_mo_orcamento';
+const MO_DOC_ORC   = 'wk_mo_orcamento';
+const MO_DOC_ORDEM = 'wk_mo_ordem';
 
 export async function moCarregarOrcamento() {
   const db = getDb();
   if (!db) return;
   try {
-    const snap = await getDoc(doc(db, 'wk_estado', MO_DOC_ID));
-    if (snap.exists()) {
+    // Carregar orçamento
+    const snapOrc = await getDoc(doc(db, 'wk_estado', MO_DOC_ORC));
+    if (snapOrc.exists()) {
       const ST = getST();
-      ST.moOrc = snap.data().orc || [];
+      ST.moOrc = snapOrc.data().orc || [];
       moAtualizarBadge();
     }
-  } catch (e) { console.warn('MO: erro ao carregar orçamento', e); }
+    // Carregar ordenações personalizadas
+    const snapOrd = await getDoc(doc(db, 'wk_estado', MO_DOC_ORDEM));
+    if (snapOrd.exists()) {
+      window._moOrdem = snapOrd.data().ordem || {};
+      // Aplicar ordenações guardadas às listas em memória
+      moAplicarOrdens();
+    }
+  } catch (e) { console.warn('MO: erro ao carregar', e); }
 }
 
 async function moGuardarOrcamento() {
@@ -449,11 +457,37 @@ async function moGuardarOrcamento() {
   if (!db) return;
   const ST = getST();
   try {
-    await setDoc(doc(db, 'wk_estado', MO_DOC_ID), {
-      orc: ST.moOrc,
-      ts: Date.now(),
-    });
+    await setDoc(doc(db, 'wk_estado', MO_DOC_ORC), { orc: ST.moOrc, ts: Date.now() });
   } catch (e) { console.warn('MO: erro ao guardar orçamento', e); }
+}
+
+async function moGuardarOrdem(chave, ordemCods) {
+  const db = getDb();
+  if (!db) return;
+  if (!window._moOrdem) window._moOrdem = {};
+  window._moOrdem[chave] = ordemCods;
+  try {
+    await setDoc(doc(db, 'wk_estado', MO_DOC_ORDEM), { ordem: window._moOrdem, ts: Date.now() });
+  } catch (e) { console.warn('MO: erro ao guardar ordem', e); }
+}
+
+// Aplica as ordens guardadas ao MO_SECCOES em memória
+function moAplicarOrdens() {
+  const ordens = window._moOrdem || {};
+  for (const [chave, cods] of Object.entries(ordens)) {
+    const [seccao, cat] = chave.split('|||');
+    const secData = MO_SECCOES[seccao];
+    if (!secData) continue;
+    const catData = secData.find(c => c.cat === cat);
+    if (!catData) continue;
+    // Reordenar servicos segundo a ordem guardada
+    const mapa = Object.fromEntries(catData.servicos.map(s => [s.cod, s]));
+    const reordenados = cods.map(cod => mapa[cod]).filter(Boolean);
+    // Adicionar serviços novos que não estejam na ordem guardada
+    const codsGuardados = new Set(cods);
+    const novos = catData.servicos.filter(s => !codsGuardados.has(s.cod));
+    catData.servicos = [...reordenados, ...novos];
+  }
 }
 
 // ════════════════════════════════════════════════
@@ -462,6 +496,11 @@ async function moGuardarOrcamento() {
 function getMoDados() {
   const ST = getST();
   return MO_SECCOES[ST.moSeccao] || MO_SECCOES['Cozinhas e Roupeiros'];
+}
+
+function moChaveOrdem() {
+  const ST = getST();
+  return `${ST.moSeccao}|||${ST.moCat}`;
 }
 
 function moAtualizarBadge() {
@@ -527,7 +566,7 @@ export function moRender() {
 }
 
 function moRenderLista() {
-  const ST = getST();
+  const ST   = getST();
   const lista = document.getElementById('mo-lista'); if (!lista) return;
   const pesq  = (ST.moPesquisa || '').toLowerCase().trim();
   let servicos;
@@ -547,11 +586,21 @@ function moRenderLista() {
     servicos = (catData?.servicos || []).map(s => ({ ...s, _cat: catData?.cat, _cor: catData?.cor }));
   }
 
+  // Modo de reordenação: só activo quando não há pesquisa
+  const podeOrdenar = !pesq;
+
   lista.innerHTML = servicos.map(s => {
-    const noOrc    = ST.moOrc.some(x => x.cod === s.cod);
+    const noOrc      = ST.moOrc.some(x => x.cod === s.cod);
     const temDetalhe = !!(s.inclui || s.exclui || s.condicoes);
     return `
-      <div class="mo-item ${noOrc ? 'mo-item-selected' : ''}">
+      <div class="mo-item ${noOrc ? 'mo-item-selected' : ''}" draggable="${podeOrdenar}" data-cod="${s.cod}"
+        ${podeOrdenar ? `
+          ondragstart="window._moDragStart(event)"
+          ondragover="window._moDragOver(event)"
+          ondragleave="window._moDragLeave(event)"
+          ondrop="window._moDrop(event)"
+          ondragend="window._moDragEnd(event)"` : ''}>
+        ${podeOrdenar ? `<div class="mo-drag-handle" title="Arrastar para reordenar">⠿</div>` : ''}
         <div style="display:flex;flex-direction:column;gap:3px;min-width:80px;flex-shrink:0">
           <span class="mo-item-cod">${s.cod}</span>
           <button class="mo-item-add"
@@ -594,6 +643,69 @@ function moRenderLista() {
       </div>`;
   }).join('') || `<div style="text-align:center;padding:40px;color:var(--t4);font-size:12px">Nenhum serviço encontrado</div>`;
 }
+
+// ════════════════════════════════════════════════
+// DRAG-AND-DROP — reordenação de serviços MO
+// ════════════════════════════════════════════════
+let _dragSrc = null;
+
+window._moDragStart = function(e) {
+  _dragSrc = e.currentTarget;
+  _dragSrc.classList.add('mo-drag-active');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', _dragSrc.dataset.cod);
+};
+
+window._moDragOver = function(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const target = e.currentTarget;
+  if (target === _dragSrc) return;
+  target.classList.add('mo-drag-over');
+};
+
+window._moDragLeave = function(e) {
+  e.currentTarget.classList.remove('mo-drag-over');
+};
+
+window._moDragEnd = function(e) {
+  document.querySelectorAll('.mo-drag-active,.mo-drag-over').forEach(el => {
+    el.classList.remove('mo-drag-active', 'mo-drag-over');
+  });
+  _dragSrc = null;
+};
+
+window._moDrop = function(e) {
+  e.preventDefault();
+  const target = e.currentTarget;
+  target.classList.remove('mo-drag-over');
+  if (!_dragSrc || _dragSrc === target) return;
+
+  const ST      = getST();
+  const lista   = document.getElementById('mo-lista');
+  const items   = [...lista.querySelectorAll('.mo-item[data-cod]')];
+  const srcIdx  = items.indexOf(_dragSrc);
+  const tgtIdx  = items.indexOf(target);
+  if (srcIdx < 0 || tgtIdx < 0) return;
+
+  // Reordenar no DOM
+  if (srcIdx < tgtIdx) {
+    target.after(_dragSrc);
+  } else {
+    target.before(_dragSrc);
+  }
+
+  // Reordenar no MO_SECCOES em memória
+  const catData = getMoDados().find(c => c.cat === ST.moCat);
+  if (!catData) return;
+  const novaOrdem = [...lista.querySelectorAll('.mo-item[data-cod]')].map(el => el.dataset.cod);
+  const mapa      = Object.fromEntries(catData.servicos.map(s => [s.cod, s]));
+  catData.servicos = novaOrdem.map(cod => mapa[cod]).filter(Boolean);
+
+  // Persistir no Firebase
+  moGuardarOrdem(moChaveOrdem(), novaOrdem);
+  toast('↕ Ordem guardada');
+};
 
 function moRenderPainel() {
   const ST  = getST();
