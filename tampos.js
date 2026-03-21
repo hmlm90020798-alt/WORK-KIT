@@ -824,6 +824,14 @@ function renderCalculadora() {
   const esp   = TS.calc.espessura;
 
   ct.innerHTML = `
+    <!-- Botão limpar tudo — topo da calculadora -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+      <button onclick="window.calcLimpar()"
+        style="padding:7px 14px;border-radius:8px;background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.2);color:#ffb3a0;font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s">
+        ↺ Limpar tudo
+      </button>
+    </div>
+
     <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start">
 
       <!-- COLUNA ESQUERDA — inputs -->
