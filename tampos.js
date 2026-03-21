@@ -245,6 +245,7 @@ let TS = {
   pvpMax:        null,
   vistaGlobal:   false,   // todos os materiais numa vista
   ordenacao:     'nome',  // 'nome' | 'pvp_asc' | 'pvp_desc'
+  margemPadrao:  0.25,    // carregada do Firebase ao iniciar
   // Calculadora
   calc: {
     material:    'Silestone',
@@ -306,6 +307,17 @@ export async function tampoInit() {
 async function tampoCarregarOverrides() {
   const db = getDb();
   if (!db) return;
+
+  // Carregar margem configurada
+  try {
+    const { getDoc: _getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const mSnap = await _getDoc(doc(db, 'wk_configuracoes', 'margem'));
+    if (mSnap.exists()) {
+      const m = mSnap.data().valor;
+      if (m > 0 && m < 1) TS.margemPadrao = m;
+    }
+  } catch(e) { /* silencioso — usa default 0.25 */ }
+
   try {
     const snap = await getDocs(collection(db, 'wk_tampos_overrides'));
     snap.forEach(d => {
@@ -457,20 +469,44 @@ function renderCatalogo() {
     </div>
 
     <!-- Calculadora rápida C1 → PVP -->
-    <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(196,97,42,.07);border:1px solid rgba(196,97,42,.18);border-radius:12px;margin-bottom:14px;flex-wrap:wrap">
-      <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(196,97,42,.6)">C1 → PVP</span>
-      <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:200px">
-        <input type="number" id="calc-c1-rapido" placeholder="C1 (ex: 44100)"
-          oninput="window.calcPvpRapido()"
-          style="flex:1;padding:6px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:7px;font-family:var(--mono);font-size:13px;color:var(--t1);outline:none;min-width:0">
-        <span style="font-size:11px;color:var(--t4)">÷100 ÷ (1 - 25%) × 1,23 =</span>
-        <div id="calc-pvp-resultado"
-          style="font-family:var(--mono);font-size:15px;font-weight:700;color:rgba(255,190,152,.9);white-space:nowrap;min-width:80px">
-          —
+    <div style="background:rgba(196,97,42,.07);border:1px solid rgba(196,97,42,.18);border-radius:12px;margin-bottom:14px;overflow:hidden">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid rgba(196,97,42,.15)">
+        <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(196,97,42,.6)">Calculadora C1 → PVP</span>
+        <span style="font-size:9px;color:var(--t4);margin-left:auto">Fórmula: C1 ÷ (1 - margem) × 1,23</span>
+      </div>
+      <!-- Inputs -->
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;flex-wrap:wrap">
+        <!-- C1 -->
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <label style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">C1</label>
+          <input type="number" id="calc-c1-rapido" placeholder="ex: 44100"
+            oninput="window.calcPvpRapido()"
+            style="width:130px;padding:6px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:7px;font-family:var(--mono);font-size:13px;color:var(--t1);outline:none">
+        </div>
+        <!-- Margem -->
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <label style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">Margem %</label>
+          <div style="display:flex;align-items:center;gap:4px">
+            <input type="number" id="calc-margem" placeholder="25" min="0" max="99" step="0.5"
+              value="${(TS.margemPadrao * 100).toFixed(1)}"
+              oninput="window.calcMargemUpdate(this.value)"
+              style="width:70px;padding:6px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:7px;font-family:var(--mono);font-size:13px;color:var(--t1);outline:none">
+            <span style="font-size:11px;color:var(--t4)">%</span>
+          </div>
+        </div>
+        <span style="font-size:18px;color:var(--t4);margin-top:14px">=</span>
+        <!-- Resultado -->
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <label style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">PVP c/ IVA</label>
+          <div id="calc-pvp-resultado"
+            style="font-family:var(--mono);font-size:18px;font-weight:700;color:rgba(255,190,152,.9);min-width:100px;padding:6px 0">
+            —
+          </div>
         </div>
         <button onclick="window.calcPvpCopiar()" id="calc-pvp-copiar"
-          style="display:none;padding:5px 10px;border-radius:6px;background:rgba(196,97,42,.15);border:1px solid rgba(196,97,42,.3);color:rgba(255,190,152,.7);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">
-          ⎘ Copiar
+          style="display:none;margin-top:14px;padding:6px 12px;border-radius:7px;background:rgba(196,97,42,.15);border:1px solid rgba(196,97,42,.3);color:rgba(255,190,152,.7);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">
+          ⎘ Copiar PVP
         </button>
       </div>
     </div>
@@ -642,32 +678,46 @@ function renderCardTampo(a, mat) {
 }
 
 // ── Calculadora rápida C1 → PVP ─────────────────────────────────
-const MARGEM_PADRAO = 0.25;
-const IVA           = 1.23;
-let _pvpRapidoVal   = null;
+const IVA = 1.23;
+let _pvpRapidoVal = null;
 
 window.calcPvpRapido = function() {
-  const inp = document.getElementById('calc-c1-rapido');
-  const res = document.getElementById('calc-pvp-resultado');
-  const btn = document.getElementById('calc-pvp-copiar');
+  const inp    = document.getElementById('calc-c1-rapido');
+  const res    = document.getElementById('calc-pvp-resultado');
+  const btn    = document.getElementById('calc-pvp-copiar');
   if (!inp || !res) return;
 
-  const c1cents = parseNum(inp.value);
-  if (!c1cents || c1cents <= 0) {
-    res.textContent = '—';
-    _pvpRapidoVal = null;
+  const c1raw  = parseNum(inp.value);
+  const margem = TS.margemPadrao;
+
+  if (!c1raw || c1raw <= 0 || margem <= 0 || margem >= 1) {
+    res.textContent = '—'; _pvpRapidoVal = null;
     if (btn) btn.style.display = 'none';
     return;
   }
 
-  // C1 pode vir em cêntimos (ex: 44100) ou em euros (ex: 44.1)
-  // Se > 1000, assume cêntimos
-  const c1euros = c1cents > 1000 ? c1cents / 100 : c1cents;
-  const pvp = (c1euros / (1 - MARGEM_PADRAO)) * IVA;
+  // C1 > 1000 → assume cêntimos, divide por 100
+  const c1euros = c1raw > 1000 ? c1raw / 100 : c1raw;
+  const pvp     = (c1euros / (1 - margem)) * IVA;
   _pvpRapidoVal = pvp;
 
   res.textContent = pvp.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
   if (btn) btn.style.display = '';
+};
+
+window.calcMargemUpdate = async function(val) {
+  const m = parseNum(val) / 100;
+  if (isNaN(m) || m <= 0 || m >= 1) return;
+  TS.margemPadrao = m;
+  window.calcPvpRapido(); // recalcular imediatamente
+
+  // Persistir no Firebase
+  const db = getDb();
+  if (db) {
+    try {
+      await setDoc(doc(db, 'wk_configuracoes', 'margem'), { valor: m, ts: Date.now() });
+    } catch(e) { console.warn('Erro ao guardar margem:', e); }
+  }
 };
 
 window.calcPvpCopiar = function() {
