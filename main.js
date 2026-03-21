@@ -73,47 +73,130 @@ const MAPA_DADOS = {
 // (ELETRO_DB e ELETRO_ESSENCIAIS importados de eletros.js)
 // ════════════════════════════════════════════════
 
-// ════════════════════════════════════════════════
-// BASE DE DADOS — MÃO DE OBRA
-// ════════════════════════════════════════════════
-const MO_DADOS = [
-  { cat:'Mobiliário', icon:'🪑', cor:'#C4612A', servicos:[
-    { cod:'49010601', nome:'Instalação Móvel de Cozinha', pvp:15, unid:'un', desc:'Montagem e nivelação de cada módulo de cozinha.', nota:'' },
-    { cod:'49010602', nome:'Instalação Cozinha Completa até 5m', pvp:350, unid:'un', desc:'Montagem completa de cozinha até 5 metros lineares.', nota:'⚠️ Inclui nivelação e fixação' },
-    { cod:'49010603', nome:'Metro Linear adicional (>5m)', pvp:70, unid:'ml', desc:'Por cada metro linear adicional acima dos 5m.', nota:'' },
-    { cod:'49010611', nome:'Remoção de Cozinha Existente', pvp:150, unid:'un', desc:'Desmontagem e remoção da cozinha existente.', nota:'⚠️ Não inclui transporte de resíduos' },
-  ]},
-  { cat:'Tampos', icon:'🪨', cor:'#2A7A74', servicos:[
-    { cod:'49010600', nome:'Instalação Tampo de Cozinha', pvp:80, unid:'un', desc:'Instalação de tampo, incluindo cortes e acabamentos.', nota:'' },
-    { cod:'49013108', nome:'Orçamento Tampo', pvp:50, unid:'un', desc:'Visita para orçamentação de tampo.', nota:'💡 Valor descontado se aceitar' },
-  ]},
-  { cat:'Lava-Loiça', icon:'🚰', cor:'#2A5A9A', servicos:[
-    { cod:'49010607', nome:'Instalação Lava-Loiça', pvp:40, unid:'un', desc:'Instalação e vedação de lava-loiça e sifão.', nota:'' },
-    { cod:'49010608', nome:'Instalação Torneira de Cozinha', pvp:20, unid:'un', desc:'Instalação/fixação de torneira e ligação de bichas.', nota:'⚠️ Cliente fecha água' },
-    { cod:'49010615', nome:'Remoção Torneira / Lava-Loiça', pvp:20, unid:'un', desc:'Desinstalação do equipamento existente.', nota:'' },
-  ]},
-  { cat:'Eletrodomésticos', icon:'⚡', cor:'#6B4FC4', servicos:[
-    { cod:'49010604', nome:'Instalação Eletrodoméstico Elétrico', pvp:49, unid:'un', desc:'Instalação e ligação elétrica até 1,5m da caixa.', nota:'⚠️ Circuito dedicado para indução/forno' },
-    { cod:'49010634', nome:'Troca Placa Gás por Elétrica', pvp:120, unid:'un', desc:'Remoção placa gás + tamponamento + instalação elétrica.', nota:'' },
-    { cod:'49010606', nome:'Instalação Exaustor de Ilha', pvp:99, unid:'un', desc:'Fixação de exaustor em ilha com tubo e ligação elétrica.', nota:'' },
-    { cod:'49010614', nome:'Remoção Eletrodoméstico Elétrico', pvp:25, unid:'un', desc:'Desinstalação do eletrodoméstico existente.', nota:'' },
-  ]},
-  { cat:'Roupeiro', icon:'🚪', cor:'#2A5A9A', servicos:[
-    { cod:'49011254', nome:'Instalação Roupeiro a Medida', pvp:59, unid:'ml', desc:'Montagem ao metro linear com fixação a parede.', nota:'⚠️ Não inclui remate' },
-    { cod:'49013125', nome:'Instalação Roupeiro em Kit', pvp:49, unid:'ml', desc:'Montagem kit com gavetas, portas e acessórios.', nota:'' },
-    { cod:'49011262', nome:'Instalação Roupeiro (módulo)', pvp:25, unid:'un', desc:'Montagem de módulo com portas de dobradiça.', nota:'' },
-  ]},
-  { cat:'Circuitos', icon:'🔌', cor:'#6B4FC4', servicos:[
-    { cod:'49015265', nome:'Circuito Elétrico 16A até 25m', pvp:299, unid:'un', desc:'Para equipamentos até 3kW.', nota:'💡 Placas vitrocerâmicas' },
-    { cod:'49015268', nome:'Circuito Elétrico 32A até 25m', pvp:369, unid:'un', desc:'Para placas de indução e fornos elétricos até 7kW.', nota:'💡 Não inclui tomada 32A' },
-  ]},
-  { cat:'Visitas', icon:'📋', cor:'#8B6914', servicos:[
-    { cod:'49010648', nome:'Visita de Orçamento — Mobiliário', pvp:30, unid:'un', desc:'Deslocação até 30km + levantamento + orçamento.', nota:'💡 Descontado no orçamento final' },
-    { cod:'49013434', nome:'Verificação de Medidas Cozinhas', pvp:20, unid:'un', desc:'Levantamento para projecto no simulador LM.', nota:'' },
-  ]},
-];
 
 // ════════════════════════════════════════════════
+// BASE DE DADOS — MÃO DE OBRA
+// Fonte: Mão_de_Obra_-_Cozinhas_e_roupeiros.xlsx
+// Folha: 08 Cozinhas · 57 serviços reais
+// ════════════════════════════════════════════════
+
+// Códigos globais obrigatórios
+const MO_GLOBAIS = [
+  { cod: '49014163', nome: 'Pedido de Produto para Instalação', pvp: 0,  nota: '⚠️ OBRIGATÓRIO em todos os pedidos com instalação' },
+  { cod: '49013101', nome: 'Deslocação Instalações',            pvp: 30, nota: '⚠️ Adicionar sempre que aplicável' },
+];
+
+const MO_DADOS = [
+  {
+    cat: 'Remodelação de Cozinha', icon: '🔧', cor: '#8B4513',
+    servicos: [
+      { cod:'49010617', nome:'Remoção ECO Cozinha (mín. 3ml)',                  pvp:43,    unid:'un', nota:'',                                               desc:'Desmontagem e remoção de cozinha antiga ao metro linear com entrega a ponto de reciclagem.',                                                                                exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+      { cod:'49010618', nome:'Desinstalação Simples Cozinha (ml)',               pvp:25,    unid:'un', nota:'',                                               desc:'Desinstalação de todos os móveis e equipamentos da cozinha.',                                                                                                                exclui:'Remoção de móveis · Tratamento de resíduos em reciclagem' },
+      { cod:'49010619', nome:'Orçamento Remodelação Cozinhas',                   pvp:30,    unid:'un', nota:'💡 Descontado no orçamento final',                desc:'Revisão detalhada de medidas + levantamento de planta + preenchimento para equipa técnica de loja.',                                                                    exclui:'Produto · Produtos essenciais' },
+      { cod:'49013434', nome:'Verificação de Medidas Cozinhas',                  pvp:20,    unid:'un', nota:'⚠️ Deslocação >30km acresce 30€',                desc:'Levantamento de medidas para execução de projeto no simulador LM. Retificação de medidas incluída.',                                                                   exclui:'Deslocação >30km' },
+      { cod:'49014059', nome:'Ativação IVA Taxa Reduzida — Remodelação',         pvp:0.01,  unid:'un', nota:'⚠️ Aplicar em obras de remodelação',             desc:'Ativação de IVA a taxa reduzida para mão de obra em obras de remodelação.',                                                                                            exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+      { cod:'49012770', nome:'Trabalho Complementar Remodelação Cozinha',        pvp:1,     unid:'un', nota:'',                                               desc:'Tarefas descritas pelo instalador não incluídas no serviço padrão de remodelação.',                                                                                        exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+      { cod:'49011142', nome:'Trabalho Complementar Impermeabilização Interior', pvp:1,     unid:'un', nota:'',                                               desc:'Tarefas complementares de impermeabilização interior descritas pelo instalador.',                                                                                          exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+    ],
+  },
+  {
+    cat: 'Mobiliário de Cozinha', icon: '🪑', cor: '#C4612A',
+    servicos: [
+      { cod:'49010601', nome:'Instalação Módulos Cozinha (mín. 1ml)',            pvp:59,    unid:'ml', nota:'⚠️ Deslocação >30km acresce 30€',                desc:'Montagem e instalação de todos os móveis/módulos ao metro linear. Inclui rodapés, portas, puxadores, prateleiras e até 4 eletrodomésticos LM integrados no projeto.',  exclui:'Produto · Produtos essenciais · Trabalhos de canalização, eletricidade ou construção civil adicionais' },
+      { cod:'49010611', nome:'Instalação Extraível de Coluna ou de Canto',       pvp:39,    unid:'un', nota:'⚠️ Deslocação >30km acresce 30€',                desc:'Montagem e instalação de extraíveis de coluna ou de canto. Inclui afinamento de rolamentos e teste de funcionamento.',                                                     exclui:'Produto · Produtos essenciais' },
+      { cod:'49010610', nome:'Instalação Extraível Standard',                    pvp:20,    unid:'un', nota:'⚠️ Deslocação >30km acresce 30€',                desc:'Montagem e instalação de extraíveis simples. Inclui afinamento de rolamentos e teste de funcionamento.',                                                                     exclui:'Produto · Produtos essenciais' },
+      { cod:'49010609', nome:'Instalação Gaveta / Gaveta Interior / Gavetão',    pvp:5,     unid:'un', nota:'⚠️ Deslocação >30km acresce 30€',                desc:'Montagem e instalação de gaveta, gaveta interior ou gavetão. Inclui afinamento de rolamentos e teste de funcionamento.',                                                     exclui:'Produto · Produtos essenciais' },
+      { cod:'49010612', nome:'Adaptação de Módulos de Cozinha',                  pvp:40,    unid:'un', nota:'',                                               desc:'Modificação estrutural para encaixar o móvel no espaço disponível ou para encastrar eletrodoméstico.',                                                                       exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+      { cod:'49010613', nome:'Cortes Simples',                                   pvp:5,     unid:'un', nota:'',                                               desc:'Medição precisa e corte controlado para instalação de lava-loiça ou torneira, preservando a integridade do móvel.',                                                           exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+      { cod:'49010660', nome:'Instalação Acessório Cozinha',                     pvp:20,    unid:'un', nota:'⚠️ Deslocação >30km acresce 30€',                desc:'Montagem e fixação de acessórios de cozinha.',                                                                                                                                exclui:'Produto · Produtos essenciais' },
+      { cod:'49010648', nome:'Visita Orçamento — Mobiliário de Cozinha',         pvp:30,    unid:'un', nota:'💡 Descontado no orçamento final',                desc:'Orçamentação de materiais e trabalhos necessários. Deslocação até 30km incluída.',                                                                                            exclui:'Produto · Produtos essenciais · Deslocação >30km (acresce 30€)' },
+      { cod:'49010649', nome:'Trabalho Complementar — Mobiliário de Cozinha',    pvp:1,     unid:'un', nota:'',                                               desc:'Tarefas descritas pelo instalador não incluídas no serviço padrão de mobiliário.',                                                                                          exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+    ],
+  },
+  {
+    cat: 'Tampos', icon: '🪨', cor: '#2A7A74',
+    servicos: [
+      { cod:'49010602', nome:'Instalação Tampo Madeira Maciça',                  pvp:90,    unid:'un', nota:'⚠️ Inclui 2ª deslocação pós-tratamento',         desc:'Instalação de tampo de madeira maciça. Inclui tratamento e envernizamento (2ª deslocação) e aplicação de silicone.',                                                       exclui:'Produto · Produtos essenciais · Deslocação >30km (acresce 30€)' },
+      { cod:'49010603', nome:'Instalação Tampo Laminado',                        pvp:60,    unid:'un', nota:'⚠️ Deslocação >30km acresce 30€',                desc:'Instalação de tampo laminado. Inclui aplicação de silicone para isolamento.',                                                                                               exclui:'Produto · Produtos essenciais · Deslocação >30km (acresce 30€)' },
+      { cod:'49013081', nome:'Orçamento Tampo de Cozinha',                       pvp:30,    unid:'un', nota:'💡 Descontado no orçamento final',                desc:'Orçamentação de materiais e trabalhos necessários para tampo. Deslocação até 30km incluída.',                                                                                exclui:'Produto · Produtos essenciais' },
+      { cod:'49013082', nome:'Trabalho Complementar Tampo de Cozinha',           pvp:1,     unid:'un', nota:'',                                               desc:'Tarefas descritas pelo instalador não incluídas no serviço padrão de tampo.',                                                                                                   exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+    ],
+  },
+  {
+    cat: 'Lava-Louça', icon: '🚰', cor: '#2A5A9A',
+    servicos: [
+      { cod:'49010607', nome:'Instalação Lava-Loiça',                            pvp:40,    unid:'un', nota:'⚠️ Deslocação >30km acresce 30€',                desc:'Instalação de lava-loiça e sifão/tubagem de evacuação de água. Inclui isolamento e vedação.',                                                                             exclui:'Produto · Produtos essenciais · Deslocação >30km (acresce 30€)' },
+      { cod:'49010608', nome:'Instalação Torneira de Cozinha',                   pvp:20,    unid:'un', nota:'⚠️ Cliente deve fechar a água',                  desc:'Instalação/fixação de torneira de bancada ou parede. Inclui ligação de bichas de água.',                                                                                   exclui:'Produto · Produtos essenciais · Trabalhos de canalização adicionais' },
+      { cod:'49010615', nome:'Remoção Torneira / Lava-Loiça',                    pvp:20,    unid:'un', nota:'',                                               desc:'Desinstalação da torneira ou lava-loiça existente.',                                                                                                                         exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+      { cod:'49013107', nome:'Orçamento Lava-Loiça / Torneira',                  pvp:30,    unid:'un', nota:'💡 Descontado no orçamento final',                desc:'Orçamentação de materiais e trabalhos. Deslocação até 30km incluída.',                                                                                                       exclui:'Produto · Produtos essenciais' },
+      { cod:'49013108', nome:'Trabalho Complementar Lava-Loiça / Torneira',      pvp:1,     unid:'un', nota:'',                                               desc:'Tarefas descritas pelo instalador não incluídas no serviço padrão de lava-loiça.',                                                                                          exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+    ],
+  },
+  {
+    cat: 'Eletrodomésticos', icon: '⚡', cor: '#6B4FC4',
+    servicos: [
+      { cod:'49010604', nome:'Instalação Eletrodoméstico Elétrico',              pvp:49,    unid:'un', nota:'⚠️ Caixa de derivação até 1,5m · Circuito dedicado necessário para indução/forno', desc:'Instalação conforme manual. Ligação elétrica até caixa de derivação (máx. 1,5m). Teste e funcionamento.',                                                       exclui:'Produto · Produtos essenciais · Circuito elétrico dedicado · Deslocação >30km' },
+      { cod:'49010634', nome:'Troca Placa a Gás por Elétrica',                   pvp:120,   unid:'un', nota:'⚠️ Caixa de derivação até 1,5m',                 desc:'Remoção da placa a gás, tamponamento do gás e instalação de placa elétrica com ligação à caixa de derivação (máx. 1,5m).',                                                 exclui:'Produto · Produtos essenciais · Deslocação >30km (acresce 30€)' },
+      { cod:'49010606', nome:'Instalação Exaustor de Ilha',                      pvp:99,    unid:'un', nota:'⚠️ Ligação elétrica até caixa derivação máx. 2m', desc:'Fixação de exaustor em ilha. Montagem de tubo de escoamento de fumos, encaixe à chaminé. Ligação elétrica até à caixa de derivação (máx. 2m).',                         exclui:'Produto · Produtos essenciais · Deslocação >30km (acresce 30€)' },
+      { cod:'49010635', nome:'Instalação Eletrodoméstico a Gás',                 pvp:59,    unid:'un', nota:'⚠️ Caixa de derivação até 1,5m',                 desc:'Fixação e instalação conforme fabricante. Ligação de gás por mangueira normalizada ou tubo de aço. Ligação elétrica até à caixa de derivação (máx. 1,5m).',             exclui:'Produto · Produtos essenciais · Deslocação >30km (acresce 30€)' },
+      { cod:'49014390', nome:'Inst. Eletrodom. Elétrico — Externo (não LM)',     pvp:59,    unid:'un', nota:'⚠️ Para aparelhos não comprados na LM',          desc:'Instalação de eletrodoméstico elétrico não adquirido na Leroy Merlin. Mesmas condições da instalação standard.',                                                             exclui:'Produto · Produtos essenciais · Deslocação >30km (acresce 30€)' },
+      { cod:'49014391', nome:'Inst. Eletrodoméstico Elétrico — Oferta',          pvp:0.01,  unid:'un', nota:'⚠️ Apenas para instalações em oferta',           desc:'Instalação de eletrodoméstico elétrico em regime de oferta.',                                                                                                                  exclui:'Produto · Produtos essenciais' },
+      { cod:'49010636', nome:'Remoção Eletrodoméstico a Gás',                    pvp:25,    unid:'un', nota:'',                                               desc:'Desinstalação do eletrodoméstico a gás existente.',                                                                                                                          exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+      { cod:'49010614', nome:'Remoção Eletrodoméstico Elétrico',                 pvp:25,    unid:'un', nota:'',                                               desc:'Desinstalação do eletrodoméstico elétrico existente.',                                                                                                                       exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+      { cod:'49014856', nome:'E-LAR — Desinstalação Eletrodoméstico a Gás',      pvp:15,    unid:'un', nota:'',                                               desc:'Desinstalação de equipamento a gás existente.',                                                                                                                             exclui:'Tamponamento do gás · Todo trabalho não mencionado' },
+      { cod:'49014857', nome:'Recolha Equipamento Antigo',                       pvp:0.01,  unid:'un', nota:'',                                               desc:'Recolha de equipamento antigo para reciclagem.',                                                                                                                             exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+      { cod:'49015039', nome:'Tamponamento de Gás — Eletrodomésticos',           pvp:10,    unid:'un', nota:'✓ Inclui tampão de gás',                         desc:'Tamponamento da saída de gás.',                                                                                                                                              exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+      { cod:'49014852', nome:'Orçamento — Termoacumulador ou Eletrodom. E-LAR',  pvp:30,    unid:'un', nota:'💡 Descontado no orçamento final',                desc:'Orçamentação de materiais e trabalhos para instalação. Deslocação até 30km incluída.',                                                                                        exclui:'Produto · Produtos essenciais · Deslocação >30km (acresce 30€)' },
+      { cod:'49010638', nome:'Orçamento Instalação Eletrodoméstico a Gás',       pvp:30,    unid:'un', nota:'💡 Descontado no orçamento final',                desc:'Orçamentação de materiais e trabalhos para instalação a gás. Deslocação até 30km incluída.',                                                                                   exclui:'Produto · Produtos essenciais · Deslocação >30km (acresce 30€)' },
+      { cod:'49010631', nome:'Orçamento Instalação Eletrodoméstico Elétrico',    pvp:30,    unid:'un', nota:'💡 Descontado no orçamento final',                desc:'Orçamentação de materiais e trabalhos para instalação elétrica. Deslocação até 30km incluída.',                                                                               exclui:'Produto · Produtos essenciais · Deslocação >30km (acresce 30€)' },
+      { cod:'49010639', nome:'Trabalho Complementar Eletrodoméstico a Gás',      pvp:1,     unid:'un', nota:'',                                               desc:'Tarefas descritas pelo instalador não incluídas no serviço padrão de eletrodoméstico a gás.',                                                                               exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+      { cod:'49010629', nome:'Trabalho Complementar Eletrodoméstico Elétrico',   pvp:1,     unid:'un', nota:'',                                               desc:'Tarefas descritas pelo instalador não incluídas no serviço padrão de eletrodoméstico elétrico.',                                                                             exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+    ],
+  },
+  {
+    cat: 'Circuitos Elétricos (E-LAR)', icon: '🔌', cor: '#3A5A9A',
+    servicos: [
+      { cod:'49015268', nome:'Circuito 32A até 25m — Placa Indução (E-LAR)',     pvp:369,   unid:'un', nota:'⚠️ Não inclui tomada reforçada 32A · Para equipamentos até 7kW', desc:'Instalação de calha/tubo, passagem de cabo, ligação a disjuntor e diferencial, ligação a quadro elétrico apto. Circuito dedicado para placa de indução.',        exclui:'Alterações a quadro principal · Furação especial em betão/pedra >30cm · Arremates estéticos · Substituição de eléctrodo de terra' },
+      { cod:'49015267', nome:'Circuito Elétrico 32A até 25m',                    pvp:369,   unid:'un', nota:'⚠️ Não inclui tomada reforçada 32A · Para equipamentos até 7kW', desc:'Instalação de circuito elétrico 32A. Inclui calha/tubo, cabo 6mm, disjuntor 32A, diferencial 30mA e ligação a quadro apto.',                                       exclui:'Alterações a quadro principal · Furação especial · Arremates estéticos' },
+      { cod:'49015265', nome:'Circuito Elétrico 16A até 25m',                    pvp:299,   unid:'un', nota:'💡 Para equipamentos até 3kW (placas vitrocerâmicas)',             desc:'Instalação de tomada elétrica com circuito 16A. Inclui calha/tubo, cabo 2,5mm, disjuntor 16A, diferencial 30mA e tomada 16A.',                                     exclui:'Alterações a quadro principal · Furação especial em betão/pedra' },
+    ],
+  },
+  {
+    cat: 'Roupeiro a Medida', icon: '🚪', cor: '#7A4A2A',
+    servicos: [
+      { cod:'49011254', nome:'Instalação Roupeiro a Medida (ml)',                 pvp:59,    unid:'ml', nota:'⚠️ Não inclui remate ou guarnição',              desc:'Montagem ao metro linear. Inclui fixação interior e a parede, prateleiras e varão.',                                                                                         exclui:'Remate/guarnição · Obras de construção civil · Desmontagem de equipamento antigo' },
+      { cod:'49013123', nome:'Corte ou Adaptação — Remate ou Guarnição',         pvp:10,    unid:'un', nota:'',                                               desc:'Cortes ou adaptações de remate ou guarnição de roupeiros.',                                                                                                                  exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+      { cod:'49011255', nome:'Orçamentação Roupeiro a Medida',                   pvp:30,    unid:'un', nota:'💡 Descontado no orçamento final',                desc:'Orçamentação de materiais e trabalhos. Deslocação até 30km incluída.',                                                                                                       exclui:'Produto · Produtos essenciais' },
+      { cod:'49011256', nome:'Trabalho Complementar Roupeiro a Medida',          pvp:1,     unid:'un', nota:'',                                               desc:'Tarefas descritas pelo instalador não incluídas no serviço padrão de roupeiro a medida.',                                                                                      exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+    ],
+  },
+  {
+    cat: 'Roupeiro Modular / Kit', icon: '🗄', cor: '#5A4A7A',
+    servicos: [
+      { cod:'49013125', nome:'Instalação Roupeiro em Kit (metro)',                pvp:49,    unid:'ml', nota:'',                                               desc:'Montagem ao metro. Inclui fixação interior e a parede, prateleiras e varão.',                                                                                                exclui:'Módulo de gavetas · Portas de correr · Acessórios extraíveis · Guarnições' },
+      { cod:'49011262', nome:'Instalação Roupeiro (módulo)',                      pvp:25,    unid:'un', nota:'',                                               desc:'Montagem de módulo com fixação interior e a parede. Inclui prateleiras, varão e portas de dobradiça.',                                                                       exclui:'Módulo de gavetas · Portas de correr · Acessórios extraíveis · Guarnições' },
+      { cod:'49012574', nome:'Instalação Mobiliário de Organizar e Arrumar',     pvp:24.99, unid:'un', nota:'',                                               desc:'Montagem e fixação de sapateira, cómoda, secretária ou pequeno mobiliário de apoio.',                                                                                       exclui:'Produto · Desmontagem de equipamento antigo · Obras de construção civil' },
+      { cod:'49013124', nome:'Complemento — Módulo Gavetas ou Acessório Extraível', pvp:15, unid:'un', nota:'',                                               desc:'Instalação de módulo de gavetas ou acessório extraível.',                                                                                                                    exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+      { cod:'49013126', nome:'Complemento — Portas de Correr',                   pvp:15,    unid:'un', nota:'',                                               desc:'Instalação de portas de correr de roupeiro.',                                                                                                                               exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+      { cod:'49013070', nome:'Orçamento — Roupeiro / Mobiliário',                pvp:30,    unid:'un', nota:'💡 Descontado no orçamento final',                desc:'Orçamentação de materiais e trabalhos. Deslocação até 30km incluída.',                                                                                                       exclui:'Produto · Produtos essenciais' },
+      { cod:'49013069', nome:'Trabalho Complementar — Roupeiro ou Mobiliário',   pvp:1,     unid:'un', nota:'',                                               desc:'Tarefas descritas pelo instalador não incluídas no serviço padrão.',                                                                                                          exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+    ],
+  },
+  {
+    cat: 'Transversal Roupeiros', icon: '🧩', cor: '#4A7A5A',
+    servicos: [
+      { cod:'49012278', nome:'Instalação Acessório Extraível (Roupeiro)',         pvp:10,    unid:'un', nota:'',                                               desc:'Fixação de acessório extraível a roupeiro.',                                                                                                                                 exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+      { cod:'49012277', nome:'Instalação Módulo Gavetas Interior',                pvp:15,    unid:'un', nota:'',                                               desc:'Montagem e fixação de módulo de gavetas no interior do roupeiro.',                                                                                                           exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+    ],
+  },
+  {
+    cat: 'Granitos / Outros', icon: '🪨', cor: '#6B6B4A',
+    servicos: [
+      { cod:'49015346', nome:'P&L — Repelente para Granitos',                    pvp:37,    unid:'un', nota:'',                                               desc:'Aplicação de repelente para granitos.',                                                                                                                                      exclui:'Todo trabalho não mencionado nos serviços incluídos' },
+    ],
+  },
+];
+
 // BASE DE DADOS — TAMPOS
 // ════════════════════════════════════════════════
 const TAMPOS_DADOS = [
@@ -321,7 +404,7 @@ let ST = {
   eletroFiltro: '',
   // MO orçamento
   moOrc: [],
-  moCat: 'Mobiliário',
+  moCat: 'Mobiliário de Cozinha',
   moPesquisa: '',
   // Tampos
   tampoCat: '',
@@ -794,7 +877,7 @@ window.moRender = function() {
     const noOrc = ST.moOrc.some(x => x.cod === s.cod);
     return `
       <div class="mo-item ${noOrc ? 'mo-item-selected' : ''}">
-        <div style="display:flex;flex-direction:column;gap:2px;min-width:80px">
+        <div style="display:flex;flex-direction:column;gap:2px;min-width:76px;flex-shrink:0">
           <span class="mo-item-cod">${s.cod}</span>
           <button class="mo-item-add" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.5);padding:2px 7px;font-size:9px"
                   onclick="event.stopPropagation();window.copiarTexto('${s.cod}',this)">⎘ Copiar</button>
@@ -802,7 +885,8 @@ window.moRender = function() {
         <div style="flex:1;min-width:0">
           <div class="mo-item-nome">${s.nome}${s._cat ? ` <span style="font-size:9px;color:var(--t4);font-weight:400">· ${s._cat}</span>` : ''}</div>
           ${s.nota ? `<div class="mo-item-warn">${s.nota}</div>` : ''}
-          <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">${s.desc}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px;line-height:1.4">${s.desc}</div>
+          ${s.exclui ? `<div style="font-size:9px;color:rgba(255,100,100,.4);margin-top:3px">✕ Exclui: ${s.exclui}</div>` : ''}
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div class="mo-item-pvp">${s.pvp > 0 ? fmt(s.pvp) : 'A definir'}</div>
