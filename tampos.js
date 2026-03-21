@@ -456,6 +456,25 @@ function renderCatalogo() {
       </div>
     </div>
 
+    <!-- Calculadora rápida C1 → PVP -->
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(196,97,42,.07);border:1px solid rgba(196,97,42,.18);border-radius:12px;margin-bottom:14px;flex-wrap:wrap">
+      <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(196,97,42,.6)">C1 → PVP</span>
+      <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:200px">
+        <input type="number" id="calc-c1-rapido" placeholder="C1 (ex: 44100)"
+          oninput="window.calcPvpRapido()"
+          style="flex:1;padding:6px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:7px;font-family:var(--mono);font-size:13px;color:var(--t1);outline:none;min-width:0">
+        <span style="font-size:11px;color:var(--t4)">÷100 ÷ (1 - 25%) × 1,23 =</span>
+        <div id="calc-pvp-resultado"
+          style="font-family:var(--mono);font-size:15px;font-weight:700;color:rgba(255,190,152,.9);white-space:nowrap;min-width:80px">
+          —
+        </div>
+        <button onclick="window.calcPvpCopiar()" id="calc-pvp-copiar"
+          style="display:none;padding:5px 10px;border-radius:6px;background:rgba(196,97,42,.15);border:1px solid rgba(196,97,42,.3);color:rgba(255,190,152,.7);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">
+          ⎘ Copiar
+        </button>
+      </div>
+    </div>
+
     <!-- Info + pesquisa com X -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div class="bib-info" style="margin:0" id="tampo-info-bar"></div>
@@ -621,6 +640,41 @@ function renderCardTampo(a, mat) {
       </div>
     </div>`;
 }
+
+// ── Calculadora rápida C1 → PVP ─────────────────────────────────
+const MARGEM_PADRAO = 0.25;
+const IVA           = 1.23;
+let _pvpRapidoVal   = null;
+
+window.calcPvpRapido = function() {
+  const inp = document.getElementById('calc-c1-rapido');
+  const res = document.getElementById('calc-pvp-resultado');
+  const btn = document.getElementById('calc-pvp-copiar');
+  if (!inp || !res) return;
+
+  const c1cents = parseNum(inp.value);
+  if (!c1cents || c1cents <= 0) {
+    res.textContent = '—';
+    _pvpRapidoVal = null;
+    if (btn) btn.style.display = 'none';
+    return;
+  }
+
+  // C1 pode vir em cêntimos (ex: 44100) ou em euros (ex: 44.1)
+  // Se > 1000, assume cêntimos
+  const c1euros = c1cents > 1000 ? c1cents / 100 : c1cents;
+  const pvp = (c1euros / (1 - MARGEM_PADRAO)) * IVA;
+  _pvpRapidoVal = pvp;
+
+  res.textContent = pvp.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  if (btn) btn.style.display = '';
+};
+
+window.calcPvpCopiar = function() {
+  if (!_pvpRapidoVal) return;
+  const txt = _pvpRapidoVal.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  navigator.clipboard.writeText(txt).then(() => window.wkToast('✓ PVP copiado: ' + txt + ' €'));
+};
 
 window.tampoSelectMaterial = function(m) {
   TS.material = m; TS.grupoFiltro = ''; TS.pesquisa = '';
