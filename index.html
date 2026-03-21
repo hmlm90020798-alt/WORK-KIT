@@ -190,31 +190,8 @@
 
     <!-- ── TAB: ELETROS ── -->
     <div class="tab-content" id="tab-eletros">
-      <div class="page-header page-header-flex">
-        <div>
-          <div class="page-titulo">Eletrodomésticos</div>
-          <div class="page-sub">Catálogo com alerta de essenciais em falta no orçamento</div>
-        </div>
-        <button class="btn-pri" id="btn-eletro-orc" onclick="window.eletroTogglePainel()">
-          ⚡ Orçamento <span id="badge-eletro" style="display:none" class="badge-pill"></span>
-        </button>
-      </div>
-      <div class="filter-chips" id="eletro-chips"></div>
-      <div class="search-bar">
-        <div class="search-wrap">
-          <span class="search-icon">⌕</span>
-          <input type="text" id="eletro-pesquisa" class="search-input" placeholder="Pesquisar eletrodoméstico, marca, ref…" oninput="window.eletroRender()">
-        </div>
-      </div>
-      <div class="cards-grid" id="eletro-grid"></div>
-      <!-- Painel de orçamento eletros -->
-      <div class="painel-lateral" id="eletro-painel" style="display:none">
-        <div class="painel-header">
-          <div class="painel-titulo">Orçamento Eletros</div>
-          <button class="painel-fechar" onclick="window.eletroTogglePainel()">×</button>
-        </div>
-        <div class="painel-body" id="eletro-painel-body"></div>
-      </div>
+      <div id="eletro-header"></div>
+      <div id="eletro-body"></div>
     </div>
 
     <!-- ── TAB: MÃO DE OBRA ── -->

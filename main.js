@@ -3,6 +3,7 @@
 // ════════════════════════════════════════════════
 
 import { tampoInit, switchTampoTab, TAMPOS_DB, ANIGRACO, TRANSPORTE } from './tampos.js';
+import { eletroInit, switchEletroTab, ELETRO_DB, ELETRO_ESSENCIAIS }  from './eletros.js';
 import { initializeApp }                                from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, doc, setDoc, getDoc, getDocs,
          collection, deleteDoc }                        from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -68,43 +69,9 @@ const MAPA_DADOS = {
 };
 
 // ════════════════════════════════════════════════
-// BASE DE DADOS — ELETRODOMÉSTICOS
+// ELETRODOMÉSTICOS — módulo delegado para eletros.js
+// (ELETRO_DB e ELETRO_ESSENCIAIS importados de eletros.js)
 // ════════════════════════════════════════════════
-const ELETRO_DADOS = [
-  { tipo:'Placa', icon:'🔥', cor:'#C4612A', artigos:[
-    { ref:'93603006', nome:'Placa Indução 4 zonas 60cm preto TEKA IDY 641Y BK', marca:'TEKA', preco:289, caract:'4 zonas · Touch MonoSlider · Detetor recipiente', notas:'', url:'https://www.leroymerlin.pt/pesquisa/93603006' },
-    { ref:'93418142', nome:'Placa Indução 4 zonas 7kW 59×52cm preto CATA IB 6324', marca:'CATA', preco:225, caract:'4 zonas · 7kW · Booster · Conectividade exaustor', notas:'', url:'https://www.leroymerlin.pt/pesquisa/93418142' },
-    { ref:'95573263', nome:'Placa Indução 4 zonas 7200W AEG TN64IA0BIB', marca:'AEG', preco:399, caract:'4 zonas PowerBoost · Hob2Hood · Função Pausa · Sem moldura', notas:'★ Melhor escolha', url:'https://www.leroymerlin.pt/pesquisa/95573263' },
-    { ref:'90215362', nome:'Placa Indução 4 zonas 60cm Haier HAISJ64MC', marca:'HAIER', preco:389, caract:'4 zonas · Vidro Facetado · WiFi + Bluetooth', notas:'', url:'https://www.leroymerlin.pt/pesquisa/90215362' },
-  ]},
-  { tipo:'Forno', icon:'🍳', cor:'#8B4513', artigos:[
-    { ref:'93470587', nome:'Forno Multifunções 71L 60cm Bosch HBA514S3', marca:'BOSCH', preco:379, caract:'71L · 7 modos · Limpeza aqualítica · A+', notas:'', url:'https://www.leroymerlin.pt/pesquisa/93470587' },
-    { ref:'84780952', nome:'Forno Pirolítico 71L 60cm TEKA HCB 6535P', marca:'TEKA', preco:399, caract:'Pirólise + Hydroclean AUTO · 8 funções · Guia telescópica', notas:'★ Melhor escolha', url:'https://www.leroymerlin.pt/pesquisa/84780952' },
-    { ref:'95568582', nome:'Forno Multifunções 72L Pirolítico AEG OU5PB40SM', marca:'AEG', preco:450, caract:'72L · Pirólise · A++ · Inox Infinity', notas:'', url:'https://www.leroymerlin.pt/pesquisa/95568582' },
-  ]},
-  { tipo:'Exaustor', icon:'💨', cor:'#2A5A9A', artigos:[
-    { ref:'82051805', nome:'Exaustor Oculto 49.2cm 820m³/h inox CATA GH45X', marca:'CATA', preco:170, caract:'Motor 240W · 4 níveis + turbo · LED · Touch', notas:'★ Melhor escolha', url:'https://www.leroymerlin.pt/pesquisa/82051805' },
-    { ref:'82401306', nome:'Exaustor Oculto 54cm 660m³/h inox AEG DGE5661HM', marca:'AEG', preco:330, caract:'4 velocidades · 700m³/h · LED', notas:'', url:'https://www.leroymerlin.pt/pesquisa/82401306' },
-    { ref:'96393346', nome:'Exaustor Parede 1027m³/h 90cm CATA BETA PRO 9000 X', marca:'CATA', preco:319, caract:'3 níveis · 1027m³/h · Motor A1000 · LED · Classe A', notas:'', url:'https://www.leroymerlin.pt/pesquisa/96393346' },
-  ]},
-  { tipo:'Máquina Loiça', icon:'🍽', cor:'#3A7A44', artigos:[
-    { ref:'96188516', nome:'Máquina Loiça Encastrar 13 conjuntos TEKA DFI 46720', marca:'TEKA', preco:399, caract:'13 conjuntos · SmartSensor · Meia carga · AquaStop', notas:'', url:'https://www.leroymerlin.pt/pesquisa/96188516' },
-    { ref:'91306627', nome:'Máquina Loiça Encastrar 16 conjuntos Haier XI 6B0S3FSB', marca:'HAIER', preco:699, caract:'16 conjuntos · Motor BLDC · WiFi · Abertura Auto · 40dB', notas:'★ Motor BLDC', url:'https://www.leroymerlin.pt/pesquisa/91306627' },
-  ]},
-  { tipo:'Microondas', icon:'📡', cor:'#6B4FC4', artigos:[
-    { ref:'91200482', nome:'Micro-ondas Encastrar 60cm 20L Electrolux KMSD203MMX', marca:'ELECTROLUX', preco:259, caract:'20L · 700W · 1000W grill · Prato 24.5cm · Inox', notas:'', url:'https://www.leroymerlin.pt/pesquisa/91200482' },
-    { ref:'94544983', nome:'Micro-ondas TEKA MSEG 620 BK 20L integração total', marca:'TEKA', preco:229, caract:'Integração total · Grill 1000W · Interior inox', notas:'', url:'https://www.leroymerlin.pt/pesquisa/94544983' },
-  ]},
-  { tipo:'Frigorífico', icon:'❄️', cor:'#2A7A9A', artigos:[
-    { ref:'91201602', nome:'Frigorífico Combinado Encastrar 177cm Electrolux KND5FE18S', marca:'ELECTROLUX', preco:799, caract:'177cm · Low Frost · Compressor inverter · LED · Classe E', notas:'', url:'https://www.leroymerlin.pt/pesquisa/91201602' },
-    { ref:'97267020', nome:'Frigorífico Combinado Encastrar 177cm Haier HBQW5518E', marca:'HAIER', preco:809, caract:'177cm · No Frost · LED · Classe E', notas:'', url:'https://www.leroymerlin.pt/pesquisa/97267020' },
-  ]},
-  { tipo:'Máquina Roupa', icon:'👕', cor:'#7A3A9A', artigos:[
-    { ref:'97267322', nome:'Máquina Lavar Roupa Encastrar 9kg Haier BHA6S69M6DB9J', marca:'HAIER', preco:689, caract:'9kg · 1600RPM · Classe A-30% · 16 programas c/ Vapor', notas:'', url:'https://www.leroymerlin.pt/pesquisa/97267322' },
-  ]},
-];
-
-const ELETRO_ESTRELAS = ['Placa','Forno','Exaustor','Máquina Loiça'];
 
 // ════════════════════════════════════════════════
 // BASE DE DADOS — MÃO DE OBRA
@@ -355,6 +322,7 @@ let ST = {
   // MO orçamento
   moOrc: [],
   moCat: 'Mobiliário',
+  moPesquisa: '',
   // Tampos
   tampoCat: '',
   tampoTab: 'catalogo',
@@ -415,7 +383,11 @@ window.switchTab = function(tabId, btnEl) {
   if (tabId === 'tampos') {
     tampoInit();
   }
-  if (tabId === 'eletros') eletroRender();
+  if (tabId === 'eletros') {
+    // Inicializar módulo de eletros (se ainda não tiver header)
+    if (!document.getElementById('eletro-header')?.innerHTML) eletroInit();
+    else switchEletroTab('catalogo');
+  }
   if (tabId === 'maoobra') moRender();
   if (tabId === 'cliente') cliRender();
 };
@@ -762,124 +734,9 @@ window.chkAbrirNovo = function() {
 // Funções expostas via window.* em tampos.js
 
 // ════════════════════════════════════════════════
-// ELETRODOMÉSTICOS
+// ELETRODOMÉSTICOS — delegado para eletros.js
+// Todas as funções window.eletro* estão em eletros.js
 // ════════════════════════════════════════════════
-window.eletroRender = function() {
-  // Chips de tipo
-  const chips = document.getElementById('eletro-chips');
-  if (chips) {
-    chips.innerHTML = [{ tipo:'Todos', icon:'⚡', cor:'' }, ...ELETRO_DADOS.map(t => ({ tipo:t.tipo, icon:t.icon, cor:t.cor }))]
-      .map(t => {
-        const isEstrela = ELETRO_ESTRELAS.includes(t.tipo);
-        const ativo = ST.eletroFiltro === t.tipo || (ST.eletroFiltro === '' && t.tipo === 'Todos');
-        return `<button class="chip ${ativo ? 'active' : ''}" onclick="window.eletroFiltrar('${t.tipo === 'Todos' ? '' : t.tipo}')">
-          ${t.icon} ${t.tipo}${isEstrela ? ' ⭐' : ''}
-        </button>`;
-      }).join('');
-  }
-
-  const pesquisa = (document.getElementById('eletro-pesquisa')?.value || '').toLowerCase().trim();
-  let artigos = [];
-  ELETRO_DADOS.forEach(tipo => {
-    if (ST.eletroFiltro && tipo.tipo !== ST.eletroFiltro) return;
-    tipo.artigos.forEach(a => artigos.push({ ...a, _tipo: tipo.tipo, _cor: tipo.cor, _icon: tipo.icon }));
-  });
-
-  if (pesquisa) artigos = artigos.filter(a =>
-    a.nome.toLowerCase().includes(pesquisa) ||
-    (a.marca || '').toLowerCase().includes(pesquisa) ||
-    (a.ref || '').toLowerCase().includes(pesquisa)
-  );
-
-  const grid = document.getElementById('eletro-grid'); if (!grid) return;
-  if (!artigos.length) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">⚡</div><div class="empty-titulo">Sem resultados</div></div>`;
-    return;
-  }
-
-  grid.innerHTML = artigos.map(a => {
-    const noOrc = ST.eletroOrc.some(x => x.ref === a.ref);
-    return `
-      <div class="eletro-card">
-        ${a.notas?.includes('★') ? `<span class="eletro-estrela">⭐</span>` : ''}
-        <div class="eletro-card-top">
-          <div class="eletro-card-nome">${a.nome}</div>
-          <span class="eletro-card-marca">${a.marca || ''}</span>
-        </div>
-        <div class="eletro-card-ref">Ref: ${a.ref}
-          <button class="bib-card-btn" style="margin-left:4px" onclick="window.copiarTexto('${a.ref}',this)">⎘</button>
-          ${a.url ? `<a href="${a.url}" target="_blank" class="bib-card-btn" style="text-decoration:none">↗</a>` : ''}
-        </div>
-        ${a.caract ? `<div class="eletro-card-caract">${a.caract}</div>` : ''}
-        <div class="eletro-card-footer">
-          <span class="eletro-card-preco">${fmt(a.preco)}</span>
-          <div class="eletro-card-btns">
-            <button class="eletro-card-btn add ${noOrc ? 'active' : ''}"
-                    onclick="window.eletroToggleOrc('${a.ref}')">
-              ${noOrc ? '✓ Adicionado' : '+ Orçamento'}
-            </button>
-          </div>
-        </div>
-      </div>`;
-  }).join('');
-};
-
-window.eletroFiltrar = function(tipo) {
-  ST.eletroFiltro = tipo;
-  eletroRender();
-};
-
-window.eletroToggleOrc = function(ref) {
-  const idx = ST.eletroOrc.findIndex(x => x.ref === ref);
-  if (idx >= 0) {
-    ST.eletroOrc.splice(idx, 1);
-  } else {
-    let artigo = null;
-    ELETRO_DADOS.forEach(t => { const a = t.artigos.find(x => x.ref === ref); if (a) artigo = { ...a, _tipo: t.tipo }; });
-    if (artigo) ST.eletroOrc.push({ ...artigo, qty: 1 });
-  }
-  eletroRender();
-  eletroRenderPainel();
-  const badge = document.getElementById('badge-eletro');
-  if (badge) { badge.textContent = ST.eletroOrc.length; badge.style.display = ST.eletroOrc.length ? 'inline-block' : 'none'; }
-};
-
-window.eletroTogglePainel = function() {
-  const p = document.getElementById('eletro-painel');
-  if (!p) return;
-  const aberto = p.style.display !== 'none';
-  p.style.display = aberto ? 'none' : 'flex';
-  if (!aberto) eletroRenderPainel();
-};
-
-function eletroRenderPainel() {
-  const ct = document.getElementById('eletro-painel-body'); if (!ct) return;
-  if (!ST.eletroOrc.length) {
-    ct.innerHTML = `<div style="text-align:center;padding:30px;color:rgba(255,255,255,.5);font-size:12px">Sem eletros no orçamento</div>`;
-    return;
-  }
-  const total = ST.eletroOrc.reduce((s, a) => s + (a.preco || 0) * (a.qty || 1), 0);
-
-  // Alertas de essenciais em falta
-  const tiposNoOrc = new Set(ST.eletroOrc.map(a => a._tipo));
-  const emFalta = ELETRO_ESTRELAS.filter(t => !tiposNoOrc.has(t));
-
-  ct.innerHTML = `
-    ${emFalta.length ? `<div class="ass-alerta" style="margin-bottom:12px">
-      <strong>⭐ Essenciais em falta:</strong> ${emFalta.join(', ')}
-    </div>` : `<div style="background:rgba(58,122,68,.2);border:1px solid rgba(58,122,68,.4);border-radius:8px;padding:8px 12px;font-size:11px;color:#c8f0c8;margin-bottom:12px">✅ Todos os essenciais incluídos</div>`}
-    ${ST.eletroOrc.map(a => `
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.1)">
-        <div style="flex:1;font-size:12px;color:rgba(255,255,255,.85)">${a.nome}</div>
-        <div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#fff">${fmt(a.preco)}</div>
-        <button class="bib-card-btn" onclick="window.eletroToggleOrc('${a.ref}')">×</button>
-      </div>`).join('')}
-    <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.2);display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:11px;color:rgba(255,255,255,.6)">Total Eletros</span>
-      <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--peach-light)">${fmt(total)}</span>
-    </div>
-    <button class="btn-sec" style="width:100%;margin-top:10px" onclick="window.copiarTexto('Total Eletros: ${fmt(total)}', this)">📋 Copiar total</button>`;
-}
 
 // ════════════════════════════════════════════════
 // MÃO DE OBRA
@@ -894,27 +751,64 @@ window.moRender = function() {
       <span style="font-size:10px;opacity:.6">${c.servicos.length}</span>
     </button>`).join('');
 
-  // Lista de serviços
+  // Barra de pesquisa
   const lista = document.getElementById('mo-lista'); if (!lista) return;
   const catData = MO_DADOS.find(c => c.cat === ST.moCat);
   if (!catData) return;
 
-  lista.innerHTML = catData.servicos.map(s => {
+  const pesq = (ST.moPesquisa || '').toLowerCase().trim();
+
+  // Barra de pesquisa — inserir antes da lista se não existir
+  if (!document.getElementById('mo-pesquisa-wrap')) {
+    const wrap = document.createElement('div');
+    wrap.id = 'mo-pesquisa-wrap';
+    wrap.style.cssText = 'margin-bottom:12px';
+    wrap.innerHTML = `
+      <div class="search-wrap" style="position:relative;max-width:400px">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="mo-pesquisa-input" class="search-input"
+          placeholder="Pesquisar serviço, código LM…"
+          oninput="window.moPesquisar(this.value)"
+          style="padding-right:30px">
+        <button onclick="window.moClearPesquisa()"
+          style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;
+          color:var(--t4);font-size:15px;cursor:pointer;line-height:1;padding:2px 5px">×</button>
+      </div>`;
+    lista.parentElement?.insertBefore(wrap, lista);
+  }
+
+  let servicos = catData.servicos;
+  if (pesq) {
+    // Pesquisa global em todas as categorias
+    servicos = [];
+    MO_DADOS.forEach(c => {
+      c.servicos.forEach(s => {
+        if (s.nome.toLowerCase().includes(pesq) || s.cod.includes(pesq) || (s.desc || '').toLowerCase().includes(pesq)) {
+          servicos.push({ ...s, _cat: c.cat });
+        }
+      });
+    });
+  }
+
+  lista.innerHTML = servicos.map(s => {
     const noOrc = ST.moOrc.some(x => x.cod === s.cod);
     return `
-      <div class="mo-item">
-        <span class="mo-item-cod">${s.cod}
-          <button class="mo-item-add" style="margin-left:4px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.7)"
-                  onclick="event.stopPropagation();window.copiarTexto('${s.cod}',this)">⎘</button>
-        </span>
-        <div style="flex:1;min-width:0">
-          <div class="mo-item-nome">${s.nome}</div>
-          ${s.nota ? `<div class="mo-item-warn">${s.nota}</div>` : ''}
-          <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px">${s.desc}</div>
+      <div class="mo-item ${noOrc ? 'mo-item-selected' : ''}">
+        <div style="display:flex;flex-direction:column;gap:2px;min-width:80px">
+          <span class="mo-item-cod">${s.cod}</span>
+          <button class="mo-item-add" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.5);padding:2px 7px;font-size:9px"
+                  onclick="event.stopPropagation();window.copiarTexto('${s.cod}',this)">⎘ Copiar</button>
         </div>
-        <span class="mo-item-pvp">${s.pvp > 0 ? fmt(s.pvp) : 'A definir'}</span>
-        <span class="mo-item-unid">${s.unid !== 'livre' ? '/ ' + s.unid : ''}</span>
-        <button class="mo-item-add ${noOrc ? '' : ''}"
+        <div style="flex:1;min-width:0">
+          <div class="mo-item-nome">${s.nome}${s._cat ? ` <span style="font-size:9px;color:var(--t4);font-weight:400">· ${s._cat}</span>` : ''}</div>
+          ${s.nota ? `<div class="mo-item-warn">${s.nota}</div>` : ''}
+          <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">${s.desc}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="mo-item-pvp">${s.pvp > 0 ? fmt(s.pvp) : 'A definir'}</div>
+          <div class="mo-item-unid" style="font-size:9px">${s.unid !== 'livre' ? '/ ' + s.unid : ''}</div>
+        </div>
+        <button class="mo-item-add ${noOrc ? 'mo-item-add-active' : ''}"
                 onclick="window.moToggleOrc('${s.cod}')">
           ${noOrc ? '✓' : '+'}
         </button>
@@ -922,8 +816,23 @@ window.moRender = function() {
   }).join('');
 };
 
+window.moPesquisar = function(v) {
+  ST.moPesquisa = v;
+  moRender();
+};
+
+window.moClearPesquisa = function() {
+  ST.moPesquisa = '';
+  const inp = document.getElementById('mo-pesquisa-input');
+  if (inp) inp.value = '';
+  moRender();
+};
+
 window.moSelectCat = function(cat) {
   ST.moCat = cat;
+  ST.moPesquisa = '';
+  const inp = document.getElementById('mo-pesquisa-input');
+  if (inp) inp.value = '';
   moRender();
 };
 
@@ -931,10 +840,11 @@ window.moToggleOrc = function(cod) {
   const idx = ST.moOrc.findIndex(x => x.cod === cod);
   if (idx >= 0) {
     ST.moOrc.splice(idx, 1);
+    toast('× Removido do orçamento');
   } else {
     let servico = null;
-    MO_DADOS.forEach(c => { const s = c.servicos.find(x => x.cod === cod); if (s) servico = { ...s, _cat: c.cat, qty: 1 }; });
-    if (servico) ST.moOrc.push(servico);
+    MO_DADOS.forEach(c => { const s = c.servicos.find(x => x.cod === cod); if (s) servico = { ...s, _cat: c.cat, qty: 1, nota: '' }; });
+    if (servico) { ST.moOrc.push(servico); toast('✓ Adicionado ao orçamento'); }
   }
   moRender();
   moRenderPainel();
@@ -958,30 +868,107 @@ function moRenderPainel() {
   const total = ST.moOrc.reduce((s, a) => s + (a.pvp > 0 ? a.pvp * (a.qty || 1) : 0), 0);
 
   ct.innerHTML = `
-    ${ST.moOrc.map(s => `
-      <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.1)">
-        <div style="flex:1">
-          <div style="font-size:11px;color:rgba(255,255,255,.85)">${s.nome}</div>
-          <div style="font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.4)">${s.cod}</div>
+    ${ST.moOrc.map((s, i) => `
+      <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)">
+        <!-- Nome + categoria -->
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">
+          <div style="flex:1">
+            <div style="font-size:11px;color:rgba(255,255,255,.85);font-weight:500">${s.nome}</div>
+            <div style="font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.35);margin-top:1px">${s.cod} · ${s._cat}</div>
+          </div>
+          <button onclick="window.moToggleOrc('${s.cod}')"
+            style="width:22px;height:22px;border-radius:50%;background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.2);
+            color:rgba(255,150,140,.5);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
         </div>
-        <div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#fff;white-space:nowrap">${s.pvp > 0 ? fmt(s.pvp) : 'A definir'}</div>
-        <button class="bib-card-btn" onclick="window.moToggleOrc('${s.cod}')">×</button>
+        <!-- Nota -->
+        <input type="text" placeholder="Nota (ex: sala, piso 2)…" value="${s.nota || ''}"
+          onchange="window.moAtualizarNota(${i}, this.value)"
+          style="width:100%;margin-bottom:6px;padding:4px 8px;border-radius:5px;background:rgba(255,255,255,.03);
+          border:1px solid rgba(255,255,255,.07);font-family:var(--sans);font-size:10px;color:rgba(255,255,255,.6);outline:none;
+          transition:border-color .15s"
+          onfocus="this.style.borderColor='rgba(196,97,42,.3)'"
+          onblur="this.style.borderColor='rgba(255,255,255,.07)'">
+        <!-- Qty + preço -->
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:6px">
+            <button onclick="window.moQty(${i},-1)"
+              style="width:22px;height:22px;border-radius:5px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+              color:var(--t2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</button>
+            <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--t1);min-width:18px;text-align:center">${s.qty || 1}</span>
+            <button onclick="window.moQty(${i},+1)"
+              style="width:22px;height:22px;border-radius:5px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+              color:var(--t2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>
+            <span style="font-size:10px;color:var(--t4)">× ${s.pvp > 0 ? fmt(s.pvp) : 'A definir'}</span>
+          </div>
+          <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:#fff">
+            ${s.pvp > 0 ? fmt(s.pvp * (s.qty || 1)) : '—'}
+          </span>
+        </div>
       </div>`).join('')}
-    <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.2);display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:11px;color:rgba(255,255,255,.6)">Total Mão de Obra</span>
-      <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--peach-light)">${fmt(total)}</span>
+
+    <!-- Total -->
+    <div style="margin-top:14px;padding:12px 0;border-top:1px solid rgba(255,255,255,.2);display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,190,152,.5)">Total Mão de Obra</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:1px">${ST.moOrc.length} serviço${ST.moOrc.length!==1?'s':''}</div>
+      </div>
+      <span style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--peach)">${fmt(total)}</span>
     </div>
-    <button class="btn-sec" style="width:100%;margin-top:10px" onclick="window.moCopiarOrcamento()">📋 Copiar orçamento</button>`;
+
+    <!-- Acções -->
+    <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+      <button class="btn-sec" style="width:100%" onclick="window.moCopiarOrcamento()">📋 Copiar Orçamento c/ Refs</button>
+      <button class="btn-sec" style="width:100%" onclick="window.moCopiarSoCodigos()">⎘ Só Códigos LM</button>
+      <button style="width:100%;padding:7px;border-radius:8px;background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.2);
+        color:rgba(255,150,140,.5);font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer"
+        onclick="window.moLimpar()">× Limpar orçamento</button>
+    </div>`;
 }
 
+window.moQty = function(idx, delta) {
+  if (!ST.moOrc[idx]) return;
+  ST.moOrc[idx].qty = Math.max(1, (ST.moOrc[idx].qty || 1) + delta);
+  moRenderPainel();
+};
+
+window.moAtualizarNota = function(idx, nota) {
+  if (ST.moOrc[idx]) ST.moOrc[idx].nota = nota;
+};
+
+window.moLimpar = function() {
+  if (!ST.moOrc.length) return;
+  if (confirm('Limpar todo o orçamento de mão de obra?')) {
+    ST.moOrc = [];
+    moRender();
+    moRenderPainel();
+    const badge = document.getElementById('badge-mo');
+    if (badge) { badge.textContent = '0'; badge.style.display = 'none'; }
+    toast('✓ Orçamento limpo');
+  }
+};
+
 window.moCopiarOrcamento = function() {
-  let txt = 'ORÇAMENTO — MÃO DE OBRA\n' + '─'.repeat(40) + '\n';
+  if (!ST.moOrc.length) { toast('⚠️ Orçamento vazio'); return; }
+  const linhas = ['ORÇAMENTO — MÃO DE OBRA', '═'.repeat(52), ''];
   ST.moOrc.forEach(s => {
-    txt += `${s.cod}  ${s.nome}  ${s.pvp > 0 ? fmt(s.pvp) : 'A definir'}\n`;
+    linhas.push(`${s._cat.toUpperCase()} — ${s.nome}`);
+    linhas.push(`  Código LM: ${s.cod}   Qty: ${s.qty || 1}   Unid: ${s.unid}`);
+    linhas.push(`  Preço unit: ${s.pvp > 0 ? fmt(s.pvp) : 'A definir'}   Total: ${s.pvp > 0 ? fmt(s.pvp * (s.qty || 1)) : '—'}`);
+    if (s.nota) linhas.push(`  Nota: ${s.nota}`);
+    linhas.push('');
   });
-  const total = ST.moOrc.reduce((s, a) => s + (a.pvp > 0 ? a.pvp : 0), 0);
-  txt += '─'.repeat(40) + '\nTOTAL: ' + fmt(total);
-  navigator.clipboard.writeText(txt).then(() => toast('✓ Orçamento copiado'));
+  const total = ST.moOrc.reduce((s, a) => s + (a.pvp > 0 ? a.pvp * (a.qty || 1) : 0), 0);
+  linhas.push('─'.repeat(52));
+  linhas.push(`TOTAL MÃO DE OBRA: ${fmt(total)}`);
+  linhas.push('─'.repeat(52));
+  navigator.clipboard.writeText(linhas.join('\n')).then(() => toast('✓ Orçamento copiado com referências'));
+};
+
+window.moCopiarSoCodigos = function() {
+  if (!ST.moOrc.length) { toast('⚠️ Orçamento vazio'); return; }
+  const linhas = ['CÓDIGOS LM — MÃO DE OBRA', '─'.repeat(40)];
+  ST.moOrc.forEach(s => linhas.push(`${s.cod}  ×${s.qty || 1}  ${s.nome}`));
+  navigator.clipboard.writeText(linhas.join('\n')).then(() => toast('✓ Códigos copiados'));
 };
 
 // ════════════════════════════════════════════════

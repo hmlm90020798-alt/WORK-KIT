@@ -22,8 +22,8 @@
   --glass-brd2:     rgba(255,255,255,.14);
   --glass-hi:       rgba(255,255,255,.06);
   --glass-blur:     blur(28px) saturate(160%);
-  --relevo-color:   rgba(255,255,255,.07);
-  --relevo-shadow:  1px 1px 0 rgba(0,0,0,.95), -1px -1px 0 rgba(255,255,255,.16), 0 2px 6px rgba(0,0,0,.7);
+  --relevo-color:   rgba(255,255,255,.22);
+  --relevo-shadow:  2px 2px 0 rgba(0,0,0,.98), -1px -1px 0 rgba(255,255,255,.32), 0 3px 8px rgba(0,0,0,.8);
   --brasa-color:    rgba(196,97,42,.55);
   --brasa-shadow:   1px 1px 0 rgba(0,0,0,.95), -1px -1px 0 rgba(255,190,152,.12), 0 0 12px rgba(196,97,42,.18), 0 2px 6px rgba(0,0,0,.7);
   --card-shadow:    0 4px 20px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
@@ -42,7 +42,7 @@ html { scroll-behavior: smooth; }
 body { font-family: var(--sans); background: var(--carbon); color: var(--t1); min-height: 100vh; font-size: 14px; -webkit-font-smoothing: antialiased; }
 
 /* ── EFEITOS GLOBAIS ── */
-.relevo { color: var(--relevo-color); text-shadow: var(--relevo-shadow); }
+.relevo { color: var(--relevo-color); text-shadow: var(--relevo-shadow); transition: color .28s ease, text-shadow .28s ease; }
 .brasa  { color: var(--brasa-color);  text-shadow: var(--brasa-shadow); }
 
 /* ── VIEWS ── */
@@ -197,9 +197,12 @@ body { font-family: var(--sans); background: var(--carbon); color: var(--t1); mi
 .ass-dash-card::after { content: ''; position: absolute; top: 0; left: 12px; right: 12px; height: 1px; background: linear-gradient(90deg, transparent, var(--peach-dim), transparent); transition: opacity .25s; }
 .ass-dash-card:hover { transform: translateY(-4px); border-color: rgba(196,97,42,.45); box-shadow: var(--card-hover); }
 .ass-dash-card:hover::after { background: linear-gradient(90deg, transparent, rgba(255,190,152,.6), transparent); }
+.ass-dash-card:hover .ass-dash-nome { color: rgba(255,255,255,.95); text-shadow: none; }
+.ass-dash-card:hover .ass-dash-desc { color: var(--t3); }
+.ass-dash-card:hover .ass-dash-icon { filter: brightness(1.2) saturate(1.15); }
 .ass-dash-card > * { position: relative; z-index: 1; }
-.ass-dash-icon { font-size: 20px; }
-.ass-dash-desc { font-size: 10px; color: var(--t4); }
+.ass-dash-icon { font-size: 20px; transition: filter .25s ease; }
+.ass-dash-desc { font-size: 10px; color: var(--t4); transition: color .28s ease; }
 
 /* ── BIBLIOTECA ── */
 .bib-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
@@ -303,6 +306,8 @@ body { font-family: var(--sans); background: var(--carbon); color: var(--t1); mi
 .mo-item-unid { font-size: 10px; color: var(--t4); }
 .mo-item-add { padding: 4px 10px; border-radius: 6px; background: rgba(58,122,68,.2); border: 1px solid rgba(58,122,68,.3); color: rgba(150,220,150,.7); font-size: 11px; font-weight: 700; cursor: pointer; flex-shrink: 0; transition: all .15s; }
 .mo-item-add:hover { background: rgba(58,122,68,.35); }
+.mo-item-add-active { background: rgba(58,122,68,.3) !important; border-color: rgba(58,122,68,.5) !important; color: rgba(150,255,150,.9) !important; }
+.mo-item-selected { border-color: rgba(58,122,68,.3) !important; background: rgba(58,122,68,.06) !important; }
 .mo-item-warn { font-size: 10px; color: rgba(255,190,152,.5); }
 
 /* ── PAINEL LATERAL ── */
