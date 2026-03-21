@@ -395,3 +395,6 @@ body { font-family: var(--sans); background: var(--carbon); color: var(--t1); mi
   .form-grid-2 { grid-template-columns: 1fr; }
   .painel-lateral { width: 100%; }
 }
+
+/* ── DROPDOWNS INLINE (filtros catálogo) ── */
+select option { background: var(--carbon3); color: var(--t1); }

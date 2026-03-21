@@ -223,43 +223,50 @@ window.switchEletroTab = switchEletroTab;
 function renderCatalogo() {
   const ct = document.getElementById('eletro-ct-catalogo'); if (!ct) return;
 
+  const ddStyle = `padding:8px 12px;border-radius:9px;background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.1);color:var(--t2);font-family:var(--sans);
+    font-size:12px;font-weight:500;cursor:pointer;outline:none;transition:border-color .15s;
+    appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,.25)'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;`;
+
   ct.innerHTML = `
-    <!-- Chips de tipo -->
-    <div class="filter-chips" style="margin-bottom:10px">
-      <button class="chip ${!ES.tipoFiltro?'active':''}" onclick="window.eletroFiltrarTipo('')">
-        ⚡ Todos <span style="opacity:.4">${ELETRO_DB.reduce((s,t)=>s+t.artigos.length,0)}</span>
-      </button>
-      ${ELETRO_DB.map(t=>`
-        <button class="chip ${ES.tipoFiltro===t.tipo?'active':''}" onclick="window.eletroFiltrarTipo('${t.tipo}')">
-          ${t.icon} ${t.tipo}${t.essencial?' ⭐':''} <span style="opacity:.4">${t.artigos.length}</span>
-        </button>`).join('')}
-    </div>
+    <!-- Linha de filtros: Tipo · Marca · Ordenar · Pesquisa -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
 
-    <!-- Filtro por marca -->
-    <div style="margin-bottom:10px">
-      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);margin-bottom:5px">Marca</div>
-      <div class="filter-chips" id="eletro-marca-chips">
-        <button class="chip ${!ES.marcaFiltro?'active':''}" onclick="window.eletroFiltrarMarca('')">Todas</button>
-        ${todasAsMarcas().map(m=>`
-          <button class="chip ${ES.marcaFiltro===m?'active':''}" onclick="window.eletroFiltrarMarca('${m}')">${m}</button>`).join('')}
-      </div>
-    </div>
+      <!-- Tipo -->
+      <select id="eletro-sel-tipo" onchange="window.eletroFiltrarTipo(this.value)"
+        style="${ddStyle}min-width:140px;border-color:${ES.tipoFiltro?'rgba(196,97,42,.4)':'rgba(255,255,255,.1)'}">
+        <option value="">⚡ Todos os tipos</option>
+        ${ELETRO_DB.map(t=>`<option value="${t.tipo}" ${ES.tipoFiltro===t.tipo?'selected':''}>
+          ${t.icon} ${t.tipo}${t.essencial?' ⭐':''}
+        </option>`).join('')}
+      </select>
 
-    <!-- Pesquisa + ordenação -->
-    <div class="search-bar" style="margin-bottom:10px">
-      <div class="search-wrap" style="position:relative">
+      <!-- Marca -->
+      <select id="eletro-sel-marca" onchange="window.eletroFiltrarMarca(this.value)"
+        style="${ddStyle}min-width:120px;border-color:${ES.marcaFiltro?'rgba(196,97,42,.4)':'rgba(255,255,255,.1)'}">
+        <option value="">Todas as marcas</option>
+        ${todasAsMarcas().map(m=>`<option value="${m}" ${ES.marcaFiltro===m?'selected':''}>${m}</option>`).join('')}
+      </select>
+
+      <!-- Ordenar -->
+      <select id="eletro-sel-ord" onchange="window.eletroOrdenar(this.value)"
+        style="${ddStyle}min-width:110px">
+        <option value="nome"     ${ES.ordenacao==='nome'    ?'selected':''}>A → Z</option>
+        <option value="pvp_asc"  ${ES.ordenacao==='pvp_asc' ?'selected':''}>Preço ↑</option>
+        <option value="pvp_desc" ${ES.ordenacao==='pvp_desc'?'selected':''}>Preço ↓</option>
+        <option value="marca"    ${ES.ordenacao==='marca'   ?'selected':''}>Marca</option>
+      </select>
+
+      <!-- Pesquisa -->
+      <div class="search-wrap" style="position:relative;flex:1;min-width:160px">
         <span class="search-icon">⌕</span>
         <input type="text" id="eletro-pesq-input" class="search-input"
-          placeholder="Pesquisar nome, ref LM, características…"
-          value="${ES.pesquisa}" oninput="window.eletroPesquisar(this.value)" style="padding-right:30px">
+          placeholder="Pesquisar nome, ref LM…"
+          value="${ES.pesquisa}" oninput="window.eletroPesquisar(this.value)" style="padding-right:28px">
         <button onclick="window.eletroClearPesq()"
           style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;
-          color:${ES.pesquisa?'var(--t2)':'var(--t4)'};font-size:15px;cursor:pointer;padding:2px 5px">×</button>
-      </div>
-      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-        <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">Ordenar:</span>
-        ${[['nome','A → Z'],['pvp_asc','Preço ↑'],['pvp_desc','Preço ↓'],['marca','Marca']].map(([v,l])=>`
-          <button class="chip ${ES.ordenacao===v?'active':''}" onclick="window.eletroOrdenar('${v}')">${l}</button>`).join('')}
+          color:${ES.pesquisa?'var(--t2)':'var(--t4)'};font-size:15px;cursor:pointer;padding:2px 4px">×</button>
       </div>
     </div>
 
