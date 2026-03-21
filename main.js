@@ -1341,15 +1341,8 @@ function moRenderPainel() {
           ${s.exclui?`<div style="${s.inclui?'border-top:1px solid rgba(255,255,255,.05);padding-top:6px;':''}margin-bottom:${s.condicoes?'6px':'0'}"><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,120,100,.4);margin-bottom:4px">✕ Exclui</div>${s.exclui.split('\n').map(l=>`<div style="font-size:10px;color:rgba(255,200,190,.55);line-height:1.7">· ${l.trim()}</div>`).join('')}</div>`:''}
           ${s.condicoes?`<div style="border-top:1px solid rgba(255,255,255,.05);padding-top:6px"><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,190,152,.4);margin-bottom:4px">⚠️ Condições</div>${s.condicoes.split('\n').map(l=>`<div style="font-size:10px;color:rgba(255,190,152,.65);line-height:1.7">· ${l.trim()}</div>`).join('')}</div>`:''}
         </div>
-        <!-- Nota -->
-        <input type="text" placeholder="Nota (ex: sala, piso 2)…" value="${s.nota || ''}"
-          onchange="window.moAtualizarNota(${i}, this.value)"
-          style="width:100%;margin-bottom:6px;padding:4px 8px;border-radius:5px;background:rgba(255,255,255,.03);
-          border:1px solid rgba(255,255,255,.07);font-family:var(--sans);font-size:10px;color:rgba(255,255,255,.6);outline:none"
-          onfocus="this.style.borderColor='rgba(196,97,42,.3)'"
-          onblur="this.style.borderColor='rgba(255,255,255,.07)'">
         <!-- Qty + preço -->
-        <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
           <div style="display:flex;align-items:center;gap:6px">
             <button onclick="window.moQty(${i},-1)"
               style="width:22px;height:22px;border-radius:5px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
@@ -1359,7 +1352,8 @@ function moRenderPainel() {
               oninput="window.moQtyDirecto(${i}, this.value)"
               style="width:44px;padding:3px 6px;border-radius:5px;background:rgba(255,255,255,.06);
               border:1px solid rgba(255,255,255,.1);font-family:var(--mono);font-size:13px;font-weight:700;
-              color:var(--t1);text-align:center;outline:none;-moz-appearance:textfield"
+              color:var(--t1);text-align:center;outline:none;
+              -moz-appearance:textfield;-webkit-appearance:none;appearance:textfield"
               onfocus="this.style.borderColor='rgba(196,97,42,.4)'"
               onblur="this.style.borderColor='rgba(255,255,255,.1)'">
             <button onclick="window.moQty(${i},+1)"
