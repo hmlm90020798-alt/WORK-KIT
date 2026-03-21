@@ -457,18 +457,18 @@ function renderCardEletro(a) {
       <!-- Características com colapso -->
       ${a.caract ? `
       <div style="border-top:1px solid rgba(255,255,255,.05);padding-top:6px">
-        <div id="caract-\${a.ref}" style="font-size:10px;color:var(--t3);line-height:1.55;
-          overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">\${a.caract}</div>
+        <div id="caract-${a.ref}" style="font-size:10px;color:var(--t3);line-height:1.55;
+          overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">${a.caract}</div>
         <button onclick="(function(btn){
-          var el=document.getElementById('caract-\${a.ref}');
+          var el=document.getElementById('caract-${a.ref}');
           var aberto=el.style.webkitLineClamp==='unset';
           el.style.webkitLineClamp=aberto?'3':'unset';
           el.style.display=aberto?'-webkit-box':'block';
-          btn.textContent=aberto?'\u25be ver mais':'\u25b4 fechar';
+          btn.textContent=aberto?'▾ ver mais':'▴ fechar';
         })(this)"
           style="margin-top:4px;padding:0;background:none;border:none;
           font-size:9px;color:rgba(196,97,42,.6);cursor:pointer;font-family:var(--sans);font-weight:700">
-          \u25be ver mais
+          ▾ ver mais
         </button>
       </div>` : ''}
 
@@ -546,7 +546,7 @@ window.eletroToggleDetalhe = function(ref) {
         var aberto=el.style.webkitLineClamp==='unset';
         el.style.webkitLineClamp=aberto?'4':'unset';
         el.style.display=aberto?'-webkit-box':'block';
-        btn.textContent=aberto?'\u25be ver mais':'\u25b4 fechar';
+        btn.textContent=aberto?'▾ ver mais':'▴ fechar';
       })(this)"
         style="margin-top:5px;padding:0;background:none;border:none;font-size:9px;
         color:rgba(196,97,42,.6);cursor:pointer;font-family:var(--sans);font-weight:700">
@@ -565,7 +565,7 @@ window.eletroToggleDetalhe = function(ref) {
         var aberto=el.style.webkitLineClamp==='unset';
         el.style.webkitLineClamp=aberto?'4':'unset';
         el.style.display=aberto?'-webkit-box':'block';
-        btn.textContent=aberto?'\u25be ver mais':'\u25b4 fechar';
+        btn.textContent=aberto?'▾ ver mais':'▴ fechar';
       })(this)"
         style="margin-top:5px;padding:0;background:none;border:none;font-size:9px;
         color:rgba(196,97,42,.6);cursor:pointer;font-family:var(--sans);font-weight:700">
@@ -883,11 +883,11 @@ function renderOrcamento() {
                       var ab=el.dataset.ab==='1';
                       el.style.maxHeight=ab?'4.8em':'none';
                       el.dataset.ab=ab?'0':'1';
-                      btn.textContent=ab?'\u25be ver mais':'\u25b4 fechar';
+                      btn.textContent=ab?'▾ ver mais':'▴ fechar';
                     })(this)"
                       style="margin-top:4px;padding:0;background:none;border:none;font-size:9px;
                       color:rgba(196,97,42,.6);cursor:pointer;font-family:var(--sans);font-weight:700">
-                      \u25be ver mais
+                      ▾ ver mais
                     </button>` : ''}
                   </div>` : '\''}
                 ${a.detalhes ? `
@@ -902,11 +902,11 @@ function renderOrcamento() {
                       var ab=el.style.webkitLineClamp==='unset';
                       el.style.webkitLineClamp=ab?'3':'unset';
                       el.style.display=ab?'-webkit-box':'block';
-                      btn.textContent=ab?'\u25be ver mais':'\u25b4 fechar';
+                      btn.textContent=ab?'▾ ver mais':'▴ fechar';
                     })(this)"
                       style="margin-top:4px;padding:0;background:none;border:none;font-size:9px;
                       color:rgba(196,97,42,.6);cursor:pointer;font-family:var(--sans);font-weight:700">
-                      \u25be ver mais
+                      ▾ ver mais
                     </button>` : ''}
                   </div>` : '\''}
                                 ${a.url ? `
