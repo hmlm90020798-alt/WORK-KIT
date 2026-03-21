@@ -264,7 +264,7 @@ let TS = {
       A: { material: 'Silestone', artigo: null, espessura: '2cm' },
       B: { material: 'Dekton',    artigo: null, espessura: '2cm' },
     },
-    pecas:       [],
+    pecas:       [{ id: 'comp-p1', comp: '', larg: '0.65' }],
     revestimento:[],
     acabamentos: {},
     transporte:  null,
@@ -1172,17 +1172,15 @@ window.calcAddPeca = function(ctx, campo) {
 };
 window.calcRemPeca = function(ctx, campo, id) {
   TS[ctx][campo] = TS[ctx][campo].filter(p => p.id !== id);
-  renderCalculadora();
-  if (ctx === 'comp') {
-    // Actualizar total da secção sem re-renderizar
-    const totalComp = document.getElementById(ctx + '-' + campo + '-total');
-    if (totalComp) {
-      const t = calcTotalM2(TS[ctx][campo]);
-      totalComp.textContent = 'Total: ' + t.toFixed(4) + ' m²';
-    }
-    // Actualizar resultado comparativo
-    updateResultadoComp();
-  }
+  // Remover linha do DOM sem re-render
+  const linha = document.getElementById('peca-' + id);
+  if (linha) linha.remove();
+  // Actualizar total
+  const totalEl2 = document.getElementById(ctx + '-' + campo + '-total');
+  if (totalEl2) totalEl2.textContent = 'Total: ' + calcTotalM2(TS[ctx][campo]).toFixed(4) + ' m²';
+  // Actualizar resumo
+  if (ctx === 'calc') updateResumoCalc();
+  if (ctx === 'comp') updateResultadoComp();
 };
 window.calcUpdatePeca = function(ctx, campo, id, key, val) {
   const p = TS[ctx][campo].find(x => x.id === id);
