@@ -241,6 +241,7 @@ let ST = {
   bibItems: [],
   bibCatFiltro: 'todos',
   bibEditId: null,
+  bibEditTs: null,  // timestamp original do item em edição (não alterar ao gravar)
   // Checklists
   chkListas: [],
   // MO
@@ -465,47 +466,69 @@ window.bibAbrirNovo = function() {
 window.bibEditar = function(id) {
   const item = ST.bibItems.find(i => i.id === id); if (!item) return;
   ST.bibEditId = id;
+  // Guardar ts original para não alterar a posição na lista ao editar
+  ST.bibEditTs = item.ts || Date.now();
+  const modal = document.getElementById('modal-bib'); if (!modal) return;
   document.getElementById('modal-bib-titulo').textContent = 'Editar Item';
-  document.getElementById('bib-f-nome').value   = item.nome   || '';
-  document.getElementById('bib-f-cat').value    = item.cat    || 'material';
-  document.getElementById('bib-f-ref').value    = item.ref    || '';
-  document.getElementById('bib-f-preco').value  = item.preco  || '';
-  document.getElementById('bib-f-unidade').value= item.unidade|| 'un';
-  document.getElementById('bib-f-tags').value   = item.tags   || '';
-  document.getElementById('bib-f-url').value    = item.url    || '';
-  document.getElementById('bib-f-notas').value  = item.notas  || '';
-  document.getElementById('modal-bib').classList.add('active');
+  document.getElementById('bib-f-nome').value    = item.nome    || '';
+  document.getElementById('bib-f-cat').value     = item.cat     || 'material';
+  document.getElementById('bib-f-ref').value     = item.ref     || '';
+  document.getElementById('bib-f-preco').value   = item.preco   || '';
+  document.getElementById('bib-f-unidade').value = item.unidade || 'un';
+  document.getElementById('bib-f-tags').value    = item.tags    || '';
+  document.getElementById('bib-f-url').value     = item.url     || '';
+  document.getElementById('bib-f-notas').value   = item.notas   || '';
+  modal.classList.add('active');
 };
 
 window.bibFecharModal = function() {
   document.getElementById('modal-bib').classList.remove('active');
+  ST.bibEditId = null;
+  ST.bibEditTs = null;
 };
 
-window.bibGuardar = function() {
+window.bibGuardar = async function() {
   const nome = document.getElementById('bib-f-nome')?.value?.trim();
   if (!nome) { toast('⚠️ Nome obrigatório'); return; }
-  const id   = ST.bibEditId || gerarId();
+
+  const isEdit = !!ST.bibEditId;
+  const id     = ST.bibEditId || gerarId();
+
   const item = {
     id, nome,
-    cat:     document.getElementById('bib-f-cat')?.value     || 'material',
-    ref:     document.getElementById('bib-f-ref')?.value?.trim()  || '',
+    cat:     document.getElementById('bib-f-cat')?.value          || 'material',
+    ref:     document.getElementById('bib-f-ref')?.value?.trim()   || '',
     preco:   parseFloat(document.getElementById('bib-f-preco')?.value) || 0,
-    unidade: document.getElementById('bib-f-unidade')?.value  || 'un',
+    unidade: document.getElementById('bib-f-unidade')?.value       || 'un',
     tags:    document.getElementById('bib-f-tags')?.value?.trim()  || '',
     url:     document.getElementById('bib-f-url')?.value?.trim()   || '',
     notas:   document.getElementById('bib-f-notas')?.value?.trim() || '',
-    ts:      Date.now(),
+    // Em edição: manter o ts original para não alterar ordem na lista
+    // Em criação: usar timestamp actual (aparece no topo)
+    ts: isEdit ? (ST.bibEditTs || Date.now()) : Date.now(),
   };
-  if (ST.bibEditId) {
+
+  // Actualizar array local
+  if (isEdit) {
     const idx = ST.bibItems.findIndex(i => i.id === id);
     if (idx >= 0) ST.bibItems[idx] = item;
+    else ST.bibItems.unshift(item); // fallback
   } else {
     ST.bibItems.unshift(item);
   }
-  bibSalvar(item);
-  bibRender();
+
+  // Fechar modal e re-render imediatamente (UX rápido)
   window.bibFecharModal();
-  toast('✓ Item guardado');
+  bibRender();
+
+  // Persistir no Firebase (com feedback de erro se falhar)
+  try {
+    await setDoc(doc(_db, 'wk_biblioteca', item.id), item);
+    toast(isEdit ? '✓ Item actualizado' : '✓ Item criado');
+  } catch (e) {
+    console.error('Erro ao guardar no Firebase:', e);
+    toast('⚠️ Guardado localmente — erro de sincronização');
+  }
 };
 
 window.bibConfirmarApagar = function(id) {
