@@ -128,9 +128,11 @@ export const MAT_FAMILIAS = {
 // ESTADO DO MÓDULO
 // ════════════════════════════════════════════════
 const MS = {
-  pesquisa:    '',
+  pesquisa:      '',
   familiaFiltro: 'todas',
-  detalheRef:  null,
+  detalheRef:    null,
+  orc:           [],      // [{ ref, nome, familia, preco, unid, qty }]
+  orcAberto:     false,
 };
 
 // ════════════════════════════════════════════════
@@ -209,66 +211,76 @@ function fam_info(f) {
 // RENDER PRINCIPAL
 // ════════════════════════════════════════════════
 export function matInit() {
-  renderMatHeader();
+  // Só renderiza o header completo uma vez (contém o input de pesquisa)
+  const h = document.getElementById('mat-header');
+  if (h && !document.getElementById('mat-pesquisa')) {
+    renderMatHeader();
+  }
+  renderMatChips();
   renderMatGrid();
 }
 
 function renderMatHeader() {
   const h = document.getElementById('mat-header');
   if (!h) return;
+  h.innerHTML = `
+    <div class="page-header page-header-flex" style="margin-bottom:12px">
+      <div>
+        <div class="page-titulo">Materiais</div>
+        <div class="page-sub">${MATERIAIS_DB.length} artigos · ${Object.keys(MAT_FAMILIAS).length} famílias</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn-sec" onclick="window.matToggleOrc()">
+          🧾 Orçamento <span id="mat-orc-badge" style="display:none" class="badge-pill"></span>
+        </button>
+        <button class="btn-pri" onclick="window.matAbrirNovo()">+ Novo Artigo</button>
+      </div>
+    </div>
+    <div class="search-wrap" style="margin-bottom:14px">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="mat-pesquisa" class="search-input"
+        placeholder="Pesquisar por nome, referência LM ou 'quando usar'…"
+        oninput="window.matPesquisar(this.value)">
+      <button id="mat-pesq-clear" onclick="window.matPesquisar('')"
+        style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);
+        background:none;border:none;color:var(--t4);font-size:15px;cursor:pointer">×</button>
+    </div>
+    <div id="mat-chips"></div>
+    <div id="mat-info" style="font-size:10px;color:var(--t4);margin-bottom:10px"></div>`;
+}
+
+function renderMatChips() {
+  const chips = document.getElementById('mat-chips');
+  const info  = document.getElementById('mat-info');
+  const clear = document.getElementById('mat-pesq-clear');
+  if (!chips) return;
+
+  if (clear) clear.style.display = MS.pesquisa ? 'block' : 'none';
 
   const familias = ['todas', ...Object.keys(MAT_FAMILIAS)];
   const total    = MATERIAIS_DB.length;
   const filtrado = artigos_filtrados().length;
 
-  h.innerHTML = `
-    <div class="page-header page-header-flex">
-      <div>
-        <div class="page-titulo">Materiais</div>
-        <div class="page-sub">${total} artigos · ${Object.keys(MAT_FAMILIAS).length} famílias · pesquisa global</div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <button class="btn-pri" onclick="window.matAbrirNovo()">+ Novo Artigo</button>
-      </div>
-    </div>
+  chips.innerHTML = familias.map(f => {
+    const fi   = f === 'todas' ? { icon:'🗂', cor:'#C4612A', bg:'rgba(196,97,42,.12)' } : fam_info(f);
+    const ativo = MS.familiaFiltro === f;
+    const n    = f === 'todas' ? total : MATERIAIS_DB.filter(a => a.familia === f).length;
+    return `
+      <button onclick="window.matFiltrarFamilia('${f.replace(/'/g, "\'")}')"
+        style="padding:5px 12px;border-radius:20px;font-family:var(--sans);font-size:11px;
+        font-weight:${ativo ? '700' : '500'};cursor:pointer;transition:all .15s;white-space:nowrap;margin:0 4px 6px 0;
+        background:${ativo ? fi.bg.replace('.12','.25') : fi.bg};
+        border:1px solid ${ativo ? fi.cor+'55' : fi.cor+'22'};
+        color:${ativo ? fi.cor : 'var(--t3)'}">
+        ${f === 'todas' ? '🗂 Todas' : fi.icon+' '+f}
+        <span style="opacity:.6;margin-left:3px">${n}</span>
+      </button>`;
+  }).join('');
 
-    <!-- Barra de pesquisa global -->
-    <div class="search-wrap" style="margin-bottom:14px">
-      <span class="search-icon">⌕</span>
-      <input type="text" id="mat-pesquisa" class="search-input"
-        placeholder="Pesquisar por nome, referência LM ou 'quando usar'…"
-        value="${MS.pesquisa}"
-        oninput="window.matPesquisar(this.value)">
-      ${MS.pesquisa ? `
-        <button onclick="window.matPesquisar('')"
-          style="position:absolute;right:10px;top:50%;transform:translateY(-50%);
-          background:none;border:none;color:var(--t4);font-size:15px;cursor:pointer">×</button>
-      ` : ''}
-    </div>
-
-    <!-- Chips de família -->
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
-      ${familias.map(f => {
-        const fi   = f === 'todas' ? { icon: '🗂', cor: '#C4612A', bg: 'rgba(196,97,42,.12)' } : fam_info(f);
-        const ativo = MS.familiaFiltro === f;
-        const n     = f === 'todas' ? total : MATERIAIS_DB.filter(a => a.familia === f).length;
-        return `
-          <button onclick="window.matFiltrarFamilia('${f.replace(/'/g, "\\'")}')"
-            style="padding:5px 12px;border-radius:20px;font-family:var(--sans);font-size:11px;
-            font-weight:${ativo ? '700' : '500'};cursor:pointer;transition:all .15s;white-space:nowrap;
-            background:${ativo ? fi.bg.replace('.12', '.25') : fi.bg};
-            border:1px solid ${ativo ? fi.cor + '55' : fi.cor + '22'};
-            color:${ativo ? fi.cor : 'var(--t3)'}">
-            ${f === 'todas' ? '🗂 Todas' : fi.icon + ' ' + f}
-            <span style="opacity:.6;margin-left:3px">${n}</span>
-          </button>`;
-      }).join('')}
-    </div>
-
-    <div style="font-size:10px;color:var(--t4);margin-bottom:10px">
-      ${filtrado} artigo${filtrado !== 1 ? 's' : ''} ${MS.pesquisa || MS.familiaFiltro !== 'todas' ? 'encontrado' + (filtrado !== 1 ? 's' : '') : ''}
-    </div>`;
+  if (info) info.textContent = filtrado + ' artigo' + (filtrado !== 1 ? 's' : '') +
+    (MS.pesquisa || MS.familiaFiltro !== 'todas' ? ' encontrado' + (filtrado !== 1 ? 's' : '') : '');
 }
+
 
 function renderMatGrid() {
   const g = document.getElementById('mat-grid');
@@ -378,6 +390,15 @@ function renderCardMat(a) {
           ${a.lista}
         </span>` : '<span></span>'}
         <div style="display:flex;gap:4px">
+          <button onclick="window.matOrcToggle('${a.ref}')"
+            style="padding:3px 10px;border-radius:6px;font-family:var(--sans);font-size:10px;
+            font-weight:700;cursor:pointer;transition:all .15s;
+            ${MS.orc.some(x=>x.ref===a.ref)
+              ? 'background:rgba(58,122,68,.15);border:1px solid rgba(58,122,68,.3);color:rgba(120,220,120,.7)'
+              : 'background:rgba(196,97,42,.1);border:1px solid rgba(196,97,42,.25);color:rgba(255,190,152,.7)'
+            }">
+            ${MS.orc.some(x=>x.ref===a.ref) ? '✓ No Orc.' : '+ Orçamento'}
+          </button>
           <button onclick="window.matEditar('${a.ref}')"
             style="padding:3px 8px;border-radius:6px;background:rgba(255,255,255,.05);
             border:1px solid rgba(255,255,255,.09);color:var(--t4);font-size:10px;cursor:pointer;
@@ -468,6 +489,112 @@ function abrirModal(artigo) {
   setTimeout(() => document.getElementById('mat-f-nome')?.focus(), 50);
 }
 
+
+// ════════════════════════════════════════════════
+// ORÇAMENTO DE MATERIAIS
+// ════════════════════════════════════════════════
+function matAtualizarBadge() {
+  const badge = document.getElementById('mat-orc-badge');
+  if (badge) {
+    badge.textContent = MS.orc.length || '';
+    badge.style.display = MS.orc.length ? 'inline-block' : 'none';
+  }
+}
+
+function renderMatOrc() {
+  const painel = document.getElementById('mat-orc-painel');
+  if (!painel) return;
+
+  if (!MS.orc.length) {
+    painel.innerHTML = `
+      <div style="text-align:center;padding:30px 20px;color:var(--t4)">
+        <div style="font-size:24px;margin-bottom:8px">🧾</div>
+        <div style="font-size:12px">Sem artigos no orçamento</div>
+        <div style="font-size:10px;margin-top:4px">Clica + nos cartões para adicionar</div>
+      </div>`;
+    return;
+  }
+
+  const total = MS.orc.reduce((s, a) => s + (a.preco || 0) * (a.qty || 1), 0);
+
+  painel.innerHTML = `
+    ${MS.orc.map((a, i) => {
+      const fi = fam_info(a.familia);
+      return `
+      <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07)">
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;font-weight:600;color:var(--t1);line-height:1.3">${a.nome}</div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:2px">
+              <span style="font-family:var(--mono);font-size:9px;color:var(--peach-dark)">${a.ref}</span>
+              <span style="font-size:9px;padding:1px 6px;border-radius:99px;
+                background:${fi.bg};color:${fi.cor};border:1px solid ${fi.cor}22">${fi.icon} ${a.familia}</span>
+            </div>
+          </div>
+          <button onclick="window.matOrcRemover(${i})"
+            style="width:22px;height:22px;border-radius:50%;flex-shrink:0;
+            background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.2);
+            color:rgba(255,150,140,.5);font-size:12px;cursor:pointer;
+            display:flex;align-items:center;justify-content:center">×</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:5px">
+            <button onclick="window.matOrcQty(${i},-1)"
+              style="width:22px;height:22px;border-radius:5px;background:rgba(255,255,255,.06);
+              border:1px solid rgba(255,255,255,.1);color:var(--t2);font-size:13px;cursor:pointer;
+              display:flex;align-items:center;justify-content:center">−</button>
+            <input type="number" min="1" value="${a.qty || 1}"
+              onchange="window.matOrcQtyDirecto(${i},this.value)"
+              style="width:44px;padding:3px 6px;border-radius:5px;background:rgba(255,255,255,.06);
+              border:1px solid rgba(255,255,255,.1);font-family:var(--mono);font-size:13px;
+              font-weight:700;color:var(--t1);text-align:center;outline:none;
+              -moz-appearance:textfield;-webkit-appearance:none"
+              onfocus="this.style.borderColor='rgba(196,97,42,.4)'"
+              onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+            <button onclick="window.matOrcQty(${i},+1)"
+              style="width:22px;height:22px;border-radius:5px;background:rgba(255,255,255,.06);
+              border:1px solid rgba(255,255,255,.1);color:var(--t2);font-size:13px;cursor:pointer;
+              display:flex;align-items:center;justify-content:center">+</button>
+            <span style="font-size:10px;color:var(--t4)">× ${fmt(a.preco)}</span>
+          </div>
+          <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--t1)">
+            ${fmt((a.preco || 0) * (a.qty || 1))}
+          </span>
+        </div>
+      </div>`;
+    }).join('')}
+
+    <div style="margin-top:14px;padding:12px 0;border-top:1px solid rgba(255,255,255,.2);
+      display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,190,152,.5)">
+          Total Materiais
+        </div>
+        <div style="font-size:10px;color:var(--t4);margin-top:1px">
+          ${MS.orc.length} artigo${MS.orc.length !== 1 ? 's' : ''}
+        </div>
+      </div>
+      <span style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--peach)">
+        ${fmt(total)}
+      </span>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+      <button class="btn-sec" style="width:100%" onclick="window.matOrcCopiar()">
+        📋 Copiar Lista Completa
+      </button>
+      <button class="btn-sec" style="width:100%" onclick="window.matOrcCopiarRefs()">
+        ⎘ Copiar Referências
+      </button>
+      <button style="width:100%;padding:7px;border-radius:8px;
+        background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.2);
+        color:rgba(255,150,140,.5);font-family:var(--sans);font-size:11px;
+        font-weight:600;cursor:pointer" onclick="window.matOrcLimpar()">
+        × Limpar
+      </button>
+    </div>`;
+}
+
 // ════════════════════════════════════════════════
 // WINDOW API
 // ════════════════════════════════════════════════
@@ -475,16 +602,20 @@ window.matInit = matInit;
 
 window.matPesquisar = function(v) {
   MS.pesquisa = v || '';
-  // Sincronizar input se chamado programaticamente
+  // Sincronizar input se chamado programaticamente (ex: botão limpar)
   const inp = document.getElementById('mat-pesquisa');
-  if (inp && inp.value !== MS.pesquisa) inp.value = MS.pesquisa;
-  renderMatHeader();
+  if (inp && inp.value !== MS.pesquisa) {
+    inp.value = MS.pesquisa;
+    inp.focus();
+  }
+  // NUNCA recriar o input — só actualizar chips e grid
+  renderMatChips();
   renderMatGrid();
 };
 
 window.matFiltrarFamilia = function(f) {
   MS.familiaFiltro = f;
-  renderMatHeader();
+  renderMatChips();
   renderMatGrid();
 };
 
@@ -519,7 +650,7 @@ window.matGuardarModal = async function(refOriginal, isNovo) {
   document.getElementById('mat-modal')?.remove();
 
   await matGuardar(ref, dados);
-  renderMatHeader();
+  renderMatChips();
   renderMatGrid();
   toast(isNovo ? '✓ Artigo adicionado' : '✓ Artigo actualizado');
 };
@@ -530,9 +661,99 @@ window.matConfirmarApagar = function(ref) {
     `Apagar "${a?.nome || ref}" do catálogo de materiais?`,
     async () => {
       await matApagar(ref);
-      renderMatHeader();
+      renderMatChips();
       renderMatGrid();
       toast('✓ Artigo apagado');
     }
   );
 };
+
+window.matToggleOrc = function() {
+  MS.orcAberto = !MS.orcAberto;
+  const painel = document.getElementById('mat-orc-painel-wrap');
+  if (!painel) {
+    // Criar painel na primeira vez
+    const p = document.createElement('div');
+    p.id = 'mat-orc-painel-wrap';
+    p.className = 'painel-lateral';
+    p.style.display = 'flex';
+    p.style.flexDirection = 'column';
+    p.innerHTML = `
+      <div class="painel-header">
+        <div class="painel-titulo">Orçamento — Materiais</div>
+        <button class="painel-fechar" onclick="window.matToggleOrc()">×</button>
+      </div>
+      <div class="painel-body" id="mat-orc-painel"></div>`;
+    document.getElementById('tab-materiais')?.appendChild(p);
+  }
+  const wrap = document.getElementById('mat-orc-painel-wrap');
+  if (wrap) {
+    wrap.style.display = MS.orcAberto ? 'flex' : 'none';
+    if (MS.orcAberto) renderMatOrc();
+  }
+};
+
+window.matOrcToggle = function(ref) {
+  const idx = MS.orc.findIndex(x => x.ref === ref);
+  if (idx >= 0) {
+    MS.orc.splice(idx, 1);
+    toast('× Removido do orçamento');
+  } else {
+    const a = MATERIAIS_DB.find(x => x.ref === ref);
+    if (a) {
+      MS.orc.push({ ...a, qty: 1 });
+      toast('✓ Adicionado ao orçamento');
+    }
+  }
+  matAtualizarBadge();
+  renderMatGrid();
+  if (MS.orcAberto) renderMatOrc();
+};
+
+window.matOrcRemover = function(idx) {
+  if (MS.orc[idx]) { MS.orc.splice(idx, 1); matAtualizarBadge(); renderMatGrid(); renderMatOrc(); }
+};
+
+window.matOrcQty = function(idx, delta) {
+  if (!MS.orc[idx]) return;
+  MS.orc[idx].qty = Math.max(1, (MS.orc[idx].qty || 1) + delta);
+  renderMatOrc();
+};
+
+window.matOrcQtyDirecto = function(idx, val) {
+  if (!MS.orc[idx]) return;
+  const n = parseInt(val);
+  if (isNaN(n) || n < 1) return;
+  MS.orc[idx].qty = n;
+  renderMatOrc();
+};
+
+window.matOrcLimpar = function() {
+  if (!MS.orc.length) return;
+  window.wkConfirm('Limpar o orçamento de materiais?', () => {
+    MS.orc = [];
+    matAtualizarBadge();
+    renderMatGrid();
+    renderMatOrc();
+    toast('✓ Orçamento limpo');
+  });
+};
+
+window.matOrcCopiar = function() {
+  if (!MS.orc.length) { toast('⚠️ Orçamento vazio'); return; }
+  const total = MS.orc.reduce((s, a) => s + (a.preco||0) * (a.qty||1), 0);
+  const linhas = ['ORÇAMENTO — MATERIAIS', '─'.repeat(60)];
+  MS.orc.forEach(a => {
+    linhas.push(`${a.ref}  ×${a.qty||1}  ${fmt((a.preco||0)*(a.qty||1))}  ${a.nome}`);
+  });
+  linhas.push('─'.repeat(60));
+  linhas.push(`TOTAL: ${fmt(total)}`);
+  navigator.clipboard.writeText(linhas.join('\n')).then(() => toast('✓ Lista copiada'));
+};
+
+window.matOrcCopiarRefs = function() {
+  if (!MS.orc.length) { toast('⚠️ Orçamento vazio'); return; }
+  const linhas = MS.orc.map(a => `${a.ref}\t${a.qty||1}`);
+  navigator.clipboard.writeText(linhas.join('\n')).then(() => toast('✓ Referências copiadas'));
+};
+
