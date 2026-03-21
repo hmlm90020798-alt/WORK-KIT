@@ -1328,7 +1328,15 @@ function moRenderPainel() {
                 style="padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer;transition:all .15s;
                 background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--t4)">ℹ︎</button>`:''}
             </div>
-            <div style="font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.3);margin-top:1px">${s.cod} · ${s._cat}</div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:2px">
+              <button onclick="window.copiarTexto('${s.cod}',this)"
+                style="font-family:var(--mono);font-size:9px;color:var(--t4);background:rgba(196,97,42,.08);
+                border:1px solid rgba(196,97,42,.18);border-radius:4px;padding:1px 7px;cursor:pointer;
+                transition:all .15s" title="Copiar código LM">
+                ${s.cod} ⎘
+              </button>
+              <span style="font-size:9px;color:var(--t4)">· ${s._cat}</span>
+            </div>
           </div>
           <button onclick="window.moToggleOrc('${s.cod}')"
             style="width:22px;height:22px;border-radius:50%;background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.2);
@@ -1378,8 +1386,8 @@ function moRenderPainel() {
 
     <!-- Acções -->
     <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
-      <button class="btn-sec" style="width:100%" onclick="window.moCopiarOrcamento()">📋 Copiar Orçamento c/ Refs</button>
-      <button class="btn-sec" style="width:100%" onclick="window.moCopiarSoCodigos()">⎘ Só Códigos LM</button>
+      <button class="btn-sec" style="width:100%" onclick="window.moCopiarOrcamento()">📋 Copiar Orçamento completo</button>
+      <button class="btn-sec" style="width:100%" onclick="window.moCopiarSoCodigos()">⎘ Copiar Códigos + Quantidades</button>
       <button style="width:100%;padding:7px;border-radius:8px;background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.2);
         color:rgba(255,150,140,.5);font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer"
         onclick="window.moLimpar()">× Limpar orçamento</button>
@@ -1435,26 +1443,40 @@ window.moLimpar = function() {
 
 window.moCopiarOrcamento = function() {
   if (!ST.moOrc.length) { toast('⚠️ Orçamento vazio'); return; }
-  const linhas = ['ORÇAMENTO — MÃO DE OBRA', '═'.repeat(52), ''];
-  ST.moOrc.forEach(s => {
-    linhas.push(`${s._cat.toUpperCase()} — ${s.nome}`);
-    linhas.push(`  Código LM: ${s.cod}   Qty: ${s.qty || 1}   Unid: ${s.unid}`);
-    linhas.push(`  Preço unit: ${s.pvp > 0 ? fmt(s.pvp) : 'A definir'}   Total: ${s.pvp > 0 ? fmt(s.pvp * (s.qty || 1)) : '—'}`);
-    if (s.nota) linhas.push(`  Nota: ${s.nota}`);
-    linhas.push('');
-  });
+
   const total = ST.moOrc.reduce((s, a) => s + (a.pvp > 0 ? a.pvp * (a.qty || 1) : 0), 0);
-  linhas.push('─'.repeat(52));
-  linhas.push(`TOTAL MÃO DE OBRA: ${fmt(total)}`);
-  linhas.push('─'.repeat(52));
-  navigator.clipboard.writeText(linhas.join('\n')).then(() => toast('✓ Orçamento copiado com referências'));
+
+  // Formato optimizado para passar ao programa de orçamento LM
+  // Código | Descrição | Qty | Unid | Preço unit | Total
+  const linhas = [
+    'ORÇAMENTO — MÃO DE OBRA',
+    '─'.repeat(70),
+    `${'CÓDIGO'.padEnd(12)}${'QTY'.padEnd(6)}${'UNID'.padEnd(6)}${'P. UNIT'.padEnd(12)}${'TOTAL'.padEnd(12)}DESCRIÇÃO`,
+    '─'.repeat(70),
+  ];
+
+  ST.moOrc.forEach(s => {
+    const qty   = s.qty || 1;
+    const punit = s.pvp > 0 ? fmt(s.pvp) : 'A definir';
+    const ptot  = s.pvp > 0 ? fmt(s.pvp * qty) : '—';
+    linhas.push(
+      `${s.cod.padEnd(12)}${String(qty).padEnd(6)}${s.unid.padEnd(6)}${punit.padEnd(12)}${ptot.padEnd(12)}${s.nome}`
+    );
+  });
+
+  linhas.push('─'.repeat(70));
+  linhas.push(`${''.padEnd(36)}${'TOTAL MÃO DE OBRA:'.padEnd(12)} ${fmt(total)}`);
+
+  navigator.clipboard.writeText(linhas.join('\n')).then(() => toast('✓ Orçamento copiado — pronto para o programa LM'));
 };
 
 window.moCopiarSoCodigos = function() {
   if (!ST.moOrc.length) { toast('⚠️ Orçamento vazio'); return; }
-  const linhas = ['CÓDIGOS LM — MÃO DE OBRA', '─'.repeat(40)];
-  ST.moOrc.forEach(s => linhas.push(`${s.cod}  ×${s.qty || 1}  ${s.nome}`));
-  navigator.clipboard.writeText(linhas.join('\n')).then(() => toast('✓ Códigos copiados'));
+
+  // Formato ultra-compacto: só código + qty — ideal para inserção rápida linha a linha
+  const linhas = ST.moOrc.map(s => `${s.cod}\t${s.qty || 1}`);
+
+  navigator.clipboard.writeText(linhas.join('\n')).then(() => toast('✓ Códigos + quantidades copiados'));
 };
 
 // ════════════════════════════════════════════════
