@@ -742,7 +742,7 @@ function renderSecaoPecas(ctx, campo, titulo) {
     <div class="glass-card" style="padding:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <div class="tampo-calc-label">${titulo}</div>
-        <div style="font-family:var(--mono);font-size:12px;font-weight:700;color:rgba(255,190,152,.7)">
+        <div id="${ctx}-${campo}-total" style="font-family:var(--mono);font-size:12px;font-weight:700;color:rgba(255,190,152,.7)">
           Total: ${totalM2.toFixed(4)} m²
         </div>
       </div>
@@ -781,16 +781,21 @@ function renderLinhaPeca(ctx, campo, p, idx) {
         placeholder="0.65"
         oninput="window.calcUpdatePeca('${ctx}','${campo}','${p.id}','larg',this.value)"
         style="padding:7px 9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:7px;font-family:var(--mono);font-size:12px;color:var(--t1)">
-      <div style="padding:7px 4px;font-family:var(--mono);font-size:12px;color:rgba(255,190,152,.7);text-align:right;align-self:center">${m2}</div>
+      <div data-m2 style="padding:7px 4px;font-family:var(--mono);font-size:12px;color:rgba(255,190,152,.7);text-align:right;align-self:center">${m2}</div>
       <button onclick="window.calcRemPeca('${ctx}','${campo}','${p.id}')"
         style="width:26px;height:26px;border-radius:6px;background:rgba(192,57,43,.2);border:1px solid rgba(192,57,43,.3);color:#ffb3a0;font-size:13px;cursor:pointer;align-self:center">×</button>
     </div>`;
 }
 
+function parseNum(v) {
+  if (v === null || v === undefined || v === '') return 0;
+  return parseFloat(String(v).replace(',', '.')) || 0;
+}
+
 function calcTotalM2(pecas) {
   return pecas.reduce((s, p) => {
-    const c = parseFloat(p.comp) || 0;
-    const l = parseFloat(p.larg) || 0;
+    const c = parseNum(p.comp);
+    const l = parseNum(p.larg);
     return s + (c > 0 && l > 0 ? c * l : 0);
   }, 0);
 }
@@ -866,22 +871,22 @@ function renderResumoCalc() {
               <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);text-align:right">PVP</span>
             </div>
             ${m2Tampo > 0 ? `
-              <div style="display:grid;grid-template-columns:1fr 90px 90px;gap:4px;padding:4px 0;font-size:11px;align-items:center">
-                <span style="color:var(--t3)">Tampo ${m2Tampo.toFixed(4)}m²</span>
+              <div id="resumo-linha-tampo" style="display:grid;grid-template-columns:1fr 90px 90px;gap:4px;padding:4px 0;font-size:11px;align-items:center">
+                <span data-desc style="color:var(--t3)">Tampo ${m2Tampo.toFixed(4)}m²</span>
                 <button onclick="window.copiar('${artigo.c1[esp]}',this)"
                   style="font-family:var(--mono);font-size:11px;font-weight:700;text-align:right;background:none;border:none;color:rgba(255,190,152,.6);cursor:pointer;padding:0">
                   ${fmtC1(artigo.c1[esp])} ⎘
                 </button>
-                <span style="font-family:var(--mono);color:var(--t2);text-align:right">${fmtPVP(pvpTampo)}</span>
+                <span data-pvp style="font-family:var(--mono);color:var(--t2);text-align:right">${fmtPVP(pvpTampo)}</span>
               </div>` : ''}
             ${m2Rev > 0 ? `
-              <div style="display:grid;grid-template-columns:1fr 90px 90px;gap:4px;padding:4px 0;font-size:11px;align-items:center">
-                <span style="color:var(--t3)">Revestimento ${m2Rev.toFixed(4)}m²</span>
+              <div id="resumo-linha-rev" style="display:grid;grid-template-columns:1fr 90px 90px;gap:4px;padding:4px 0;font-size:11px;align-items:center">
+                <span data-desc style="color:var(--t3)">Revestimento ${m2Rev.toFixed(4)}m²</span>
                 <button onclick="window.copiar(String(artigo.c1[TS.calc.espRev] || artigo.c1[esp] || ''),this)"
                   style="font-family:var(--mono);font-size:11px;font-weight:700;text-align:right;background:none;border:none;color:rgba(255,190,152,.6);cursor:pointer;padding:0">
                   ${fmtC1(artigo.c1[TS.calc.espRev] || artigo.c1[esp])} ⎘
                 </button>
-                <span style="font-family:var(--mono);color:var(--t2);text-align:right">${fmtPVP(pvpRev)}</span>
+                <span data-pvp style="font-family:var(--mono);color:var(--t2);text-align:right">${fmtPVP(pvpRev)}</span>
               </div>` : ''}
             ${linhasAcb}
             ${transp ? `
@@ -900,7 +905,7 @@ function renderResumoCalc() {
             <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);margin-bottom:6px">
               Total PVP (cliente)
             </div>
-            <div style="font-family:var(--serif);font-size:26px;color:var(--t1)">
+            <div id="resumo-pvp-total" style="font-family:var(--serif);font-size:26px;color:var(--t1)">
               ${fmtPVP(pvpTotal)}
             </div>
           </div>
@@ -949,20 +954,31 @@ window.calcRemPeca = function(ctx, campo, id) {
 window.calcUpdatePeca = function(ctx, campo, id, key, val) {
   const p = TS[ctx][campo].find(x => x.id === id);
   if (p) p[key] = val;
-  // Actualizar apenas o m² da linha sem re-render total
+
+  // Actualizar m² da linha específica
   const linha = document.getElementById('peca-' + id);
   if (linha) {
-    const c = parseFloat(TS[ctx][campo].find(x => x.id === id)?.comp) || 0;
-    const l = parseFloat(TS[ctx][campo].find(x => x.id === id)?.larg) || 0;
-    const m2el = linha.children[2];
-    if (m2el) m2el.textContent = c > 0 && l > 0 ? (c * l).toFixed(4) : '—';
+    const peca = TS[ctx][campo].find(x => x.id === id);
+    const cv = parseNum(peca?.comp);
+    const lv = parseNum(peca?.larg);
+    // O 3º filho (index 2) é o div do m²
+    const m2el = linha.querySelector('[data-m2]');
+    if (m2el) m2el.textContent = cv > 0 && lv > 0 ? (cv * lv).toFixed(4) : '—';
   }
-  // Actualizar totais no resumo
+
+  // Actualizar total do campo (ex: calc-pecas-total)
+  const totalEl = document.getElementById(ctx + '-' + campo + '-total');
+  if (totalEl) {
+    const total = calcTotalM2(TS[ctx][campo]);
+    totalEl.textContent = 'Total: ' + total.toFixed(4) + ' m²';
+  }
+
+  // Actualizar resumo
   if (ctx === 'calc') updateResumoCalc();
   if (ctx === 'comp') updateResumoComp();
 };
 window.calcAcabamento = function(id, val) {
-  TS.calc.acabamentos[id] = parseFloat(val) || 0;
+  TS.calc.acabamentos[id] = parseNum(val);
   updateResumoCalc();
 };
 window.calcTransporte = function(idx) {
@@ -978,24 +994,39 @@ window.calcLimpar = function() {
 };
 
 function updateResumoCalc() {
-  const res = document.querySelector('#tampo-ct-calculadora [style*="sticky"]');
-  if (res) {
-    const mat = TAMPOS_DB[TS.calc.material];
-    const esp = TS.calc.espessura;
-    const artigo = TS.calc.artigo;
-    const m2Tampo = calcTotalM2(TS.calc.pecas);
-    const m2Rev   = calcTotalM2(TS.calc.revestimento);
-    const pvpTampo = artigo ? (artigo.pvp[esp] || 0) * m2Tampo : 0;
-    const pvpRev   = artigo ? (artigo.pvp[esp] || 0) * m2Rev   : 0;
-    let pvpAcb = 0;
-    mat.acabamentos.forEach(acb => {
-      const qty = parseFloat(TS.calc.acabamentos[acb.id]) || 0;
-      pvpAcb += acb.pvp * qty;
-    });
-    const transp   = TS.calc.transporte !== null ? TRANSPORTE[TS.calc.transporte] : null;
-    const pvpTotal = pvpTampo + pvpRev + pvpAcb + (transp ? transp.pvp : 0);
-    const totalEl  = res.querySelector('[style*="font-serif"]');
-    if (totalEl) totalEl.textContent = fmtPVP(pvpTotal);
+  const mat    = TAMPOS_DB[TS.calc.material];
+  const esp    = TS.calc.espessura;
+  const artigo = TS.calc.artigo;
+  if (!artigo) return;
+
+  const m2Tampo = calcTotalM2(TS.calc.pecas);
+  const m2Rev   = calcTotalM2(TS.calc.revestimento);
+  const espRevAtual = TS.calc.espRev && artigo.pvp[TS.calc.espRev] ? TS.calc.espRev : esp;
+  const pvpTampo = (artigo.pvp[esp] || 0) * m2Tampo;
+  const pvpRev   = (artigo.pvp[espRevAtual] || 0) * m2Rev;
+  let pvpAcb = 0;
+  mat.acabamentos.forEach(acb => {
+    pvpAcb += acb.pvp * (parseNum(TS.calc.acabamentos[acb.id]) || 0);
+  });
+  const transp   = TS.calc.transporte !== null ? TRANSPORTE[TS.calc.transporte] : null;
+  const pvpTotal = pvpTampo + pvpRev + pvpAcb + (transp ? transp.pvp : 0);
+
+  // Actualizar total PVP
+  const totalEl = document.getElementById('resumo-pvp-total');
+  if (totalEl) totalEl.textContent = fmtPVP(pvpTotal);
+
+  // Actualizar linha tampo no resumo
+  const linTampo = document.getElementById('resumo-linha-tampo');
+  if (linTampo && m2Tampo > 0) {
+    linTampo.querySelector('[data-desc]').textContent = 'Tampo ' + m2Tampo.toFixed(4) + 'm²';
+    linTampo.querySelector('[data-pvp]').textContent  = fmtPVP(pvpTampo);
+  }
+
+  // Actualizar linha revestimento no resumo
+  const linRev = document.getElementById('resumo-linha-rev');
+  if (linRev && m2Rev > 0) {
+    linRev.querySelector('[data-desc]').textContent = 'Revestimento ' + m2Rev.toFixed(4) + 'm²';
+    linRev.querySelector('[data-pvp]').textContent  = fmtPVP(pvpRev);
   }
 }
 
@@ -1208,7 +1239,7 @@ function renderSecaoPecasInner(ctx, campo) {
   return `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <div></div>
-      <div style="font-family:var(--mono);font-size:12px;font-weight:700;color:rgba(255,190,152,.7)">
+      <div id="${ctx}-${campo}-total" style="font-family:var(--mono);font-size:12px;font-weight:700;color:rgba(255,190,152,.7)">
         Total: ${totalM2.toFixed(4)} m²
       </div>
     </div>
