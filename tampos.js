@@ -346,31 +346,33 @@ function renderTampoHeader() {
   const ct = document.getElementById('tampo-header');
   if (!ct) return;
   ct.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px">
-      <div>
+    <div class="tampo-header-wrap">
+      <!-- Título + sub -->
+      <div class="tampo-header-titulo-blk">
         <div class="page-titulo">Tampos & Pedra</div>
         <div class="page-sub">Catálogo Anigraco · Calculadora · Comparador</div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <!-- Badge Anigraco -->
-        <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:6px 12px;flex-wrap:wrap">
-          <span style="font-size:10px;color:var(--t4);font-weight:700;text-transform:uppercase;letter-spacing:.1em">Fornecedor</span>
-          <span style="color:var(--t2);font-weight:600;font-size:12px">ANIGRACO</span>
+      <!-- Linha de acções -->
+      <div class="tampo-header-acoes">
+        <!-- Badge Anigraco compacto -->
+        <div class="tampo-anigraco-badge">
+          <span style="font-size:9px;color:var(--t4);font-weight:700;text-transform:uppercase;letter-spacing:.08em">Forn.</span>
           <button onclick="copiar('207849',this)"
-            style="font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(196,97,42,.12);border:1px solid rgba(196,97,42,.25);color:rgba(255,190,152,.7);cursor:pointer;transition:all .15s"
-            title="Copiar código LM">207849</button>
-          <span style="width:1px;height:14px;background:rgba(255,255,255,.12)"></span>
-          <span style="font-size:10px;color:var(--t4);font-weight:700;text-transform:uppercase;letter-spacing:.1em">Acesso tabela</span>
+            style="font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;
+            background:rgba(196,97,42,.12);border:1px solid rgba(196,97,42,.25);color:rgba(255,190,152,.7);
+            cursor:pointer;transition:all .15s" title="Copiar cód. fornecedor LM">207849</button>
+          <span style="width:1px;height:12px;background:rgba(255,255,255,.1);flex-shrink:0"></span>
           <button onclick="copiar('COD 48 SILES',this)"
-            style="font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(42,107,122,.12);border:1px solid rgba(42,107,122,.3);color:rgba(150,220,230,.7);cursor:pointer;transition:all .15s"
-            title="Copiar código de acesso à tabela">COD 48 SILES</button>
+            style="font-family:var(--mono);font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;
+            background:rgba(42,107,122,.12);border:1px solid rgba(42,107,122,.3);color:rgba(150,220,230,.7);
+            cursor:pointer;transition:all .15s" title="Acesso à tabela Anigraco">COD 48 SILES</button>
         </div>
         <!-- Tabs -->
-        <div style="display:flex;gap:4px">
+        <div class="tampo-tabs-row">
           ${['catalogo','calculadora','comparador'].map(t => `
             <button onclick="window.switchTampoTab('${t}')" id="tampo-tab-${t}"
               class="btn-sec ${TS.tab === t ? 'active' : ''}">
-              ${{ catalogo:'📋 Catálogo', calculadora:'🧮 Calculadora', comparador:'⚖️ Comparar' }[t]}
+              ${{ catalogo:'📋 Catálogo', calculadora:'🧮 Calc.', comparador:'⚖️ Comparar' }[t]}
             </button>`).join('')}
         </div>
       </div>
@@ -411,92 +413,92 @@ function renderCatalogo() {
   const ct = document.getElementById('tampo-ct-catalogo'); if (!ct) return;
 
   const materiais = Object.keys(TAMPOS_DB);
-  const mat = TAMPOS_DB[TS.material];
+  const mat    = TAMPOS_DB[TS.material];
   const grupos = mat.grupos || [];
-  const pesq = TS.pesquisa.toLowerCase().trim();
 
-  let artigos = mat.artigos.filter(a => {
-    const matchGrupo = !TS.grupoFiltro || a.grupo === TS.grupoFiltro;
-    const matchPesq  = !pesq || a.nome.toLowerCase().includes(pesq);
-    return matchGrupo && matchPesq;
-  });
+  const ddStyle = `padding:8px 12px;border-radius:9px;background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.1);color:var(--t2);font-family:var(--sans);
+    font-size:12px;font-weight:500;cursor:pointer;outline:none;transition:border-color .15s;
+    appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,.25)'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;`;
 
   ct.innerHTML = `
-    <!-- Filtro de material -->
-    <div class="filter-chips" style="margin-bottom:12px;${TS.vistaGlobal ? 'opacity:.4;pointer-events:none' : ''}">
-      ${materiais.map(m => `
-        <button class="chip ${TS.material === m ? 'active' : ''}"
-                onclick="window.tampoSelectMaterial('${m}')">
-          ${m} <span style="opacity:.5">${TAMPOS_DB[m].artigos.length}</span>
-        </button>`).join('')}
-    </div>
+    <!-- Linha de filtros: Material · Grupo · Ordenar · Vista · Pesquisa -->
+    <div class="tampo-filtros-row">
 
-    <!-- Pesquisa + filtro grupo -->
-    <div class="search-bar">
-      <div class="search-wrap" style="position:relative">
+      <!-- Material -->
+      <select id="tampo-sel-material" onchange="window.tampoSelectMaterial(this.value)"
+        style="${ddStyle}border-color:rgba(196,97,42,.3);min-width:130px">
+        ${materiais.map(m => `<option value="${m}" ${TS.material===m?'selected':''}>${m} (${TAMPOS_DB[m].artigos.length})</option>`).join('')}
+      </select>
+
+      <!-- Grupo (só se existir) -->
+      ${grupos.length ? `
+        <select id="tampo-sel-grupo" onchange="window.tampoFiltroGrupo(this.value)"
+          style="${ddStyle}min-width:90px;border-color:${TS.grupoFiltro?'rgba(196,97,42,.4)':'rgba(255,255,255,.1)'}">
+          <option value="">Todos</option>
+          ${grupos.map(g=>`<option value="${g}" ${TS.grupoFiltro===g?'selected':''}>${g}</option>`).join('')}
+        </select>` : ''}
+
+      <!-- Ordenar -->
+      <select id="tampo-sel-ord" onchange="window.tampoOrdenar(this.value)"
+        style="${ddStyle}min-width:100px">
+        <option value="nome"     ${TS.ordenacao==='nome'    ?'selected':''}>A → Z</option>
+        <option value="pvp_asc"  ${TS.ordenacao==='pvp_asc' ?'selected':''}>Preço ↑</option>
+        <option value="pvp_desc" ${TS.ordenacao==='pvp_desc'?'selected':''}>Preço ↓</option>
+      </select>
+
+      <!-- Vista global toggle -->
+      <button onclick="window.tampoToggleGlobal()"
+        style="padding:8px 12px;border-radius:9px;font-family:var(--sans);font-size:11px;font-weight:600;
+        cursor:pointer;white-space:nowrap;transition:all .15s;
+        ${TS.vistaGlobal
+          ? 'background:rgba(196,97,42,.15);border:1px solid rgba(196,97,42,.35);color:rgba(255,190,152,.8)'
+          : 'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--t3)'}">
+        🌐 Todos
+      </button>
+
+      <!-- Pesquisa -->
+      <div class="search-wrap" style="flex:1;min-width:140px;position:relative">
         <span class="search-icon">⌕</span>
         <input type="text" id="tampo-pesquisa-input" class="search-input"
-          placeholder="Pesquisar cor ou referência…"
+          placeholder="Pesquisar cor…"
           value="${TS.pesquisa}"
           oninput="window.tampoPesquisar(this.value)"
           onkeydown="if(event.key==='Escape'){window.tampoClearPesquisa();this.blur()}"
-          style="padding-right:30px">
+          style="padding-right:28px">
         <button onclick="window.tampoClearPesquisa()"
           style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;
-          color:${TS.pesquisa ? 'var(--t2)' : 'var(--t4)'};font-size:15px;cursor:pointer;line-height:1;
-          padding:2px 5px;border-radius:4px;transition:color .15s"
-          title="Limpar pesquisa">×</button>
-      </div>
-      ${grupos.length ? `
-        <div style="display:flex;gap:4px;flex-wrap:wrap">
-          <button class="chip ${!TS.grupoFiltro ? 'active' : ''}"
-                  onclick="window.tampoFiltroGrupo('')">Todos</button>
-          ${grupos.map(g => `
-            <button class="chip ${TS.grupoFiltro === g ? 'active' : ''}"
-                    onclick="window.tampoFiltroGrupo('${g}')">${g}</button>`).join('')}
-        </div>` : ''}
-      <!-- Ordenação + Vista Global -->
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-        <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">Ordenar:</span>
-        ${[
-          { label:'A → Z',          val:'nome'     },
-          { label:'Preço ↑',        val:'pvp_asc'  },
-          { label:'Preço ↓',        val:'pvp_desc' },
-        ].map(o => `
-          <button class="chip ${TS.ordenacao === o.val ? 'active' : ''}"
-            onclick="window.tampoOrdenar('${o.val}')">
-            ${o.label}
-          </button>`).join('')}
-        <div style="width:1px;height:16px;background:rgba(255,255,255,.1);margin:0 4px"></div>
-        <button class="chip ${TS.vistaGlobal ? 'active' : ''}"
-          onclick="window.tampoToggleGlobal()"
-          title="Ver todos os materiais ordenados por preço">
-          🌐 Todos os materiais
-        </button>
+          color:${TS.pesquisa?'var(--t2)':'var(--t4)'};font-size:15px;cursor:pointer;padding:2px 4px">×</button>
       </div>
     </div>
 
-    <!-- Calculadora C1→PVP — discreta, activada por botão -->
+    <!-- Calculadora C1→PVP — discreta -->
     <div style="margin-bottom:12px">
       <button onclick="window.toggleCalcRapida()"
-        style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:7px;background:transparent;border:1px solid rgba(196,97,42,.2);color:rgba(196,97,42,.6);font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s"
-        id="btn-calc-rapida">
+        style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:7px;background:transparent;
+        border:1px solid rgba(196,97,42,.2);color:rgba(196,97,42,.6);font-family:var(--sans);font-size:11px;
+        font-weight:600;cursor:pointer;transition:all .15s" id="btn-calc-rapida">
         ƒ C1 → PVP
       </button>
-      <div id="calc-rapida-painel" style="display:none;margin-top:8px;background:rgba(196,97,42,.06);border:1px solid rgba(196,97,42,.15);border-radius:10px;padding:12px 14px">
+      <div id="calc-rapida-painel" style="display:none;margin-top:8px;background:rgba(196,97,42,.06);
+        border:1px solid rgba(196,97,42,.15);border-radius:10px;padding:12px 14px">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <div style="display:flex;flex-direction:column;gap:3px">
             <label style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">C1</label>
             <input type="number" id="calc-c1-rapido" placeholder="ex: 44100"
               oninput="window.calcPvpRapido()"
-              style="width:120px;padding:6px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:7px;font-family:var(--mono);font-size:12px;color:var(--t1);outline:none">
+              style="width:110px;padding:6px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);
+              border-radius:7px;font-family:var(--mono);font-size:12px;color:var(--t1);outline:none">
           </div>
           <div style="display:flex;flex-direction:column;gap:3px">
             <label style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">Margem %</label>
             <input type="number" id="calc-margem" min="0" max="99" step="0.5"
               value="${(TS.margemPadrao * 100).toFixed(1)}"
               oninput="window.calcMargemUpdate(this.value)"
-              style="width:65px;padding:6px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:7px;font-family:var(--mono);font-size:12px;color:var(--t1);outline:none">
+              style="width:60px;padding:6px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);
+              border-radius:7px;font-family:var(--mono);font-size:12px;color:var(--t1);outline:none">
           </div>
           <span style="font-size:16px;color:var(--t4);padding-top:14px">=</span>
           <div style="display:flex;flex-direction:column;gap:3px">
@@ -504,33 +506,26 @@ function renderCatalogo() {
             <div style="display:flex;align-items:center;gap:6px">
               <div id="calc-pvp-resultado" style="font-family:var(--mono);font-size:16px;font-weight:700;color:rgba(255,190,152,.9);min-width:80px">—</div>
               <button onclick="window.calcPvpCopiar()" id="calc-pvp-copiar"
-                style="display:none;padding:4px 9px;border-radius:6px;background:rgba(196,97,42,.15);border:1px solid rgba(196,97,42,.3);color:rgba(255,190,152,.7);font-size:10px;font-weight:700;cursor:pointer">
-                ⎘
-              </button>
+                style="display:none;padding:4px 9px;border-radius:6px;background:rgba(196,97,42,.15);
+                border:1px solid rgba(196,97,42,.3);color:rgba(255,190,152,.7);font-size:10px;font-weight:700;cursor:pointer">⎘</button>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Info + pesquisa com X + botão adicionar -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <!-- Info bar + botão novo -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
       <div class="bib-info" style="margin:0" id="tampo-info-bar"></div>
       <button onclick="window.tampoNovoArtigo('${TS.material}')"
-        style="display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;
-        background:rgba(58,122,68,.12);border:1px solid rgba(58,122,68,.25);
-        color:rgba(150,220,150,.7);font-family:var(--sans);font-size:11px;font-weight:700;
-        cursor:pointer;transition:all .15s;white-space:nowrap">
+        style="padding:5px 12px;border-radius:7px;background:rgba(58,122,68,.12);border:1px solid rgba(58,122,68,.25);
+        color:rgba(150,220,150,.7);font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">
         + Novo artigo
       </button>
     </div>
 
     <!-- Grid de cards -->
     <div class="cards-grid" id="tampo-grid-cards"></div>`;
-
-  // Usar input com id para não re-renderizar — pôr id no campo
-  const inp = document.getElementById('tampo-pesquisa-input');
-  if (inp) inp.value = TS.pesquisa;
 
   renderCatalogGrid();
 }
@@ -839,18 +834,23 @@ function renderCalculadora() {
       </button>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start">
+    <div class="tampo-calc-grid">
 
       <!-- COLUNA ESQUERDA — inputs -->
       <div style="display:flex;flex-direction:column;gap:14px">
 
         <!-- Selecção de material e artigo -->
         <div class="glass-card" style="padding:16px">
-          <div class="tampo-calc-label">Material</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-            ${materiais.map(m => `
-              <button onclick="window.calcSelectMaterial('${m}')"
-                class="chip ${TS.calc.material === m ? 'active' : ''}">${m}</button>`).join('')}
+          <div class="tampo-calc-label">Material & Artigo</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+            <select onchange="window.calcSelectMaterial(this.value)"
+              style="padding:8px 28px 8px 12px;border-radius:9px;background:rgba(255,255,255,.05);
+              border:1px solid rgba(196,97,42,.3);color:var(--t2);font-family:var(--sans);font-size:12px;
+              cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;
+              background-image:url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'6\'%3E%3Cpath d=\'M0 0l5 6 5-6z\' fill=\'rgba(255,255,255,.25)\'/%3E%3C/svg%3E');
+              background-repeat:no-repeat;background-position:right 10px center">
+              ${materiais.map(m=>`<option value="${m}" ${TS.calc.material===m?'selected':''}>${m}</option>`).join('')}
+            </select>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <select id="calc-artigo" onchange="window.calcSelectArtigo(this.value)"
@@ -925,16 +925,16 @@ function renderCalculadora() {
 
         <!-- Transporte -->
         <div class="glass-card" style="padding:16px">
-          <div class="tampo-calc-label" style="margin-bottom:10px">🚚 Transporte e Montagem</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button onclick="window.calcTransporte(null)"
-              class="chip ${TS.calc.transporte === null ? 'active' : ''}">Sem transporte</button>
-            ${TRANSPORTE.map((t, i) => `
-              <button onclick="window.calcTransporte(${i})"
-                class="chip ${TS.calc.transporte === i ? 'active' : ''}">
-                ${t.label} — ${fmtPVP(t.pvp)}
-              </button>`).join('')}
-          </div>
+        <div class="tampo-calc-label" style="margin-bottom:10px">🚚 Transporte e Montagem</div>
+          <select onchange="window.calcTransporte(this.value === '' ? null : parseInt(this.value))"
+            style="width:100%;padding:8px 28px 8px 12px;border-radius:9px;background:rgba(255,255,255,.05);
+            border:1px solid rgba(255,255,255,.1);color:var(--t2);font-family:var(--sans);font-size:12px;
+            cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;
+            background-image:url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'6\'%3E%3Cpath d=\'M0 0l5 6 5-6z\' fill=\'rgba(255,255,255,.25)\'/%3E%3C/svg%3E');
+            background-repeat:no-repeat;background-position:right 10px center">
+            <option value="" ${TS.calc.transporte===null?'selected':''}>Sem transporte</option>
+            ${TRANSPORTE.map((t,i)=>`<option value="${i}" ${TS.calc.transporte===i?'selected':''}>${t.label} — ${fmtPVP(t.pvp)}</option>`).join('')}
+          </select>
         </div>
 
       </div>
@@ -964,7 +964,7 @@ function renderSecaoPecas(ctx, campo, titulo) {
       </div>
 
       <!-- Cabeçalho -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 80px 28px;gap:6px;margin-bottom:6px;padding:0 4px">
+      <div class="tampo-pecas-header">
         <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">Comp (m)</div>
         <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">Larg (m)</div>
         <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);text-align:right">m²</div>
@@ -988,7 +988,7 @@ function renderLinhaPeca(ctx, campo, p, idx) {
   const l = parseFloat(p.larg) || 0;
   const m2 = c > 0 && l > 0 ? (c * l).toFixed(4) : '—';
   return `
-    <div style="display:grid;grid-template-columns:1fr 1fr 80px 28px;gap:6px;margin-bottom:5px" id="peca-${p.id}">
+    <div class="tampo-peca-row" id="peca-${p.id}">
       <input type="number" min="0" step="0.01" value="${p.comp}"
         placeholder="ex: 3.65"
         oninput="window.calcUpdatePeca('${ctx}','${campo}','${p.id}','comp',this.value)"
@@ -1395,7 +1395,7 @@ function renderComparador() {
       </div>
 
       <!-- Peças partilhadas -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="tampo-comp-pecas-grid">
         <div>
           ${renderSecaoPecas('comp', 'pecas', '🪨 Tampo — Peças (partilhadas)')}
         </div>
@@ -1407,14 +1407,15 @@ function renderComparador() {
       <!-- Transporte -->
       <div class="glass-card" style="padding:14px">
         <div class="tampo-calc-label" style="margin-bottom:8px">🚚 Transporte (partilhado)</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button onclick="window.compTransporte(null)" class="chip ${TS.comp.transporte === null ? 'active' : ''}">Sem transporte</button>
-          ${TRANSPORTE.map((t, i) => `
-            <button onclick="window.compTransporte(${i})"
-              class="chip ${TS.comp.transporte === i ? 'active' : ''}">
-              ${t.label} — ${fmtPVP(t.pvp)}
-            </button>`).join('')}
-        </div>
+        <select onchange="window.compTransporte(this.value === '' ? null : parseInt(this.value))"
+          style="width:100%;padding:8px 28px 8px 12px;border-radius:9px;background:rgba(255,255,255,.05);
+          border:1px solid rgba(255,255,255,.1);color:var(--t2);font-family:var(--sans);font-size:12px;
+          cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;
+          background-image:url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'6\'%3E%3Cpath d=\'M0 0l5 6 5-6z\' fill=\'rgba(255,255,255,.25)\'/%3E%3C/svg%3E');
+          background-repeat:no-repeat;background-position:right 10px center">
+          <option value="" ${TS.comp.transporte===null?'selected':''}>Sem transporte</option>
+          ${TRANSPORTE.map((t,i)=>`<option value="${i}" ${TS.comp.transporte===i?'selected':''}>${t.label} — ${fmtPVP(t.pvp)}</option>`).join('')}
+        </select>
       </div>
 
       <!-- RESULTADO COMPARATIVO -->
@@ -1453,7 +1454,7 @@ function renderResultadoComp() {
   const maisCaroL = diff !== null ? (totais[0] > totais[1] ? 'A' : 'B') : null;
 
   return `
-    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center">
+    <div class="tampo-comp-resultado-grid">
       ${lados.map((l, i) => {
         const s = TS.comp.lado[l];
         const total = totais[i];
