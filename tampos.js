@@ -468,46 +468,40 @@ function renderCatalogo() {
       </div>
     </div>
 
-    <!-- Calculadora rápida C1 → PVP -->
-    <div style="background:rgba(196,97,42,.07);border:1px solid rgba(196,97,42,.18);border-radius:12px;margin-bottom:14px;overflow:hidden">
-      <!-- Header -->
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid rgba(196,97,42,.15)">
-        <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(196,97,42,.6)">Calculadora C1 → PVP</span>
-        <span style="font-size:9px;color:var(--t4);margin-left:auto">Fórmula: C1 ÷ (1 - margem) × 1,23</span>
-      </div>
-      <!-- Inputs -->
-      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;flex-wrap:wrap">
-        <!-- C1 -->
-        <div style="display:flex;flex-direction:column;gap:3px">
-          <label style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">C1</label>
-          <input type="number" id="calc-c1-rapido" placeholder="ex: 44100"
-            oninput="window.calcPvpRapido()"
-            style="width:130px;padding:6px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:7px;font-family:var(--mono);font-size:13px;color:var(--t1);outline:none">
-        </div>
-        <!-- Margem -->
-        <div style="display:flex;flex-direction:column;gap:3px">
-          <label style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">Margem %</label>
-          <div style="display:flex;align-items:center;gap:4px">
-            <input type="number" id="calc-margem" placeholder="25" min="0" max="99" step="0.5"
+    <!-- Calculadora C1→PVP — discreta, activada por botão -->
+    <div style="margin-bottom:12px">
+      <button onclick="window.toggleCalcRapida()"
+        style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:7px;background:transparent;border:1px solid rgba(196,97,42,.2);color:rgba(196,97,42,.6);font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s"
+        id="btn-calc-rapida">
+        ƒ C1 → PVP
+      </button>
+      <div id="calc-rapida-painel" style="display:none;margin-top:8px;background:rgba(196,97,42,.06);border:1px solid rgba(196,97,42,.15);border-radius:10px;padding:12px 14px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <label style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">C1</label>
+            <input type="number" id="calc-c1-rapido" placeholder="ex: 44100"
+              oninput="window.calcPvpRapido()"
+              style="width:120px;padding:6px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:7px;font-family:var(--mono);font-size:12px;color:var(--t1);outline:none">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <label style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">Margem %</label>
+            <input type="number" id="calc-margem" min="0" max="99" step="0.5"
               value="${(TS.margemPadrao * 100).toFixed(1)}"
               oninput="window.calcMargemUpdate(this.value)"
-              style="width:70px;padding:6px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:7px;font-family:var(--mono);font-size:13px;color:var(--t1);outline:none">
-            <span style="font-size:11px;color:var(--t4)">%</span>
+              style="width:65px;padding:6px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:7px;font-family:var(--mono);font-size:12px;color:var(--t1);outline:none">
+          </div>
+          <span style="font-size:16px;color:var(--t4);padding-top:14px">=</span>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <label style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">PVP c/ IVA</label>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div id="calc-pvp-resultado" style="font-family:var(--mono);font-size:16px;font-weight:700;color:rgba(255,190,152,.9);min-width:80px">—</div>
+              <button onclick="window.calcPvpCopiar()" id="calc-pvp-copiar"
+                style="display:none;padding:4px 9px;border-radius:6px;background:rgba(196,97,42,.15);border:1px solid rgba(196,97,42,.3);color:rgba(255,190,152,.7);font-size:10px;font-weight:700;cursor:pointer">
+                ⎘
+              </button>
+            </div>
           </div>
         </div>
-        <span style="font-size:18px;color:var(--t4);margin-top:14px">=</span>
-        <!-- Resultado -->
-        <div style="display:flex;flex-direction:column;gap:3px">
-          <label style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">PVP c/ IVA</label>
-          <div id="calc-pvp-resultado"
-            style="font-family:var(--mono);font-size:18px;font-weight:700;color:rgba(255,190,152,.9);min-width:100px;padding:6px 0">
-            —
-          </div>
-        </div>
-        <button onclick="window.calcPvpCopiar()" id="calc-pvp-copiar"
-          style="display:none;margin-top:14px;padding:6px 12px;border-radius:7px;background:rgba(196,97,42,.15);border:1px solid rgba(196,97,42,.3);color:rgba(255,190,152,.7);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">
-          ⎘ Copiar PVP
-        </button>
       </div>
     </div>
 
@@ -680,6 +674,16 @@ function renderCardTampo(a, mat) {
 // ── Calculadora rápida C1 → PVP ─────────────────────────────────
 const IVA = 1.23;
 let _pvpRapidoVal = null;
+
+window.toggleCalcRapida = function() {
+  const p = document.getElementById('calc-rapida-painel');
+  const b = document.getElementById('btn-calc-rapida');
+  if (!p) return;
+  const aberto = p.style.display !== 'none';
+  p.style.display = aberto ? 'none' : '';
+  if (b) b.style.color = aberto ? 'rgba(196,97,42,.6)' : 'rgba(255,190,152,.8)';
+  if (!aberto) setTimeout(() => document.getElementById('calc-c1-rapido')?.focus(), 50);
+};
 
 window.calcPvpRapido = function() {
   const inp    = document.getElementById('calc-c1-rapido');
@@ -875,7 +879,7 @@ function renderCalculadora() {
       </div>
 
         <!-- Acabamentos -->
-        <div class="glass-card" style="padding:16px">
+        <div style="padding:16px;background:var(--glass-bg);border:1px solid var(--glass-brd);border-radius:18px">
           <div class="tampo-calc-label" style="margin-bottom:12px">⚙️ Acabamentos</div>
           <div style="display:flex;flex-direction:column;gap:8px">
             ${acbs.map(acb => `
@@ -1133,12 +1137,28 @@ window.calcSelectEsp = function(esp) {
 window.calcAddPeca = function(ctx, campo) {
   TS[ctx][campo].push({ id: gerarIdPeca(), comp: '', larg: '0.65' });
   renderCalculadora();
-  if (ctx === 'comp') renderComparador();
+  if (ctx === 'comp') {
+    // Actualizar só os totais sem re-renderizar (evita perda de foco)
+    const totalComp = document.getElementById(ctx + '-' + campo + '-total');
+    if (totalComp) {
+      const t = calcTotalM2(TS[ctx][campo]);
+      totalComp.textContent = 'Total: ' + t.toFixed(4) + ' m²';
+    }
+    updateResultadoComp();
+  }
 };
 window.calcRemPeca = function(ctx, campo, id) {
   TS[ctx][campo] = TS[ctx][campo].filter(p => p.id !== id);
   renderCalculadora();
-  if (ctx === 'comp') renderComparador();
+  if (ctx === 'comp') {
+    // Actualizar só os totais sem re-renderizar (evita perda de foco)
+    const totalComp = document.getElementById(ctx + '-' + campo + '-total');
+    if (totalComp) {
+      const t = calcTotalM2(TS[ctx][campo]);
+      totalComp.textContent = 'Total: ' + t.toFixed(4) + ' m²';
+    }
+    updateResultadoComp();
+  }
 };
 window.calcUpdatePeca = function(ctx, campo, id, key, val) {
   const p = TS[ctx][campo].find(x => x.id === id);
@@ -1150,21 +1170,32 @@ window.calcUpdatePeca = function(ctx, campo, id, key, val) {
     const peca = TS[ctx][campo].find(x => x.id === id);
     const cv = parseNum(peca?.comp);
     const lv = parseNum(peca?.larg);
-    // O 3º filho (index 2) é o div do m²
     const m2el = linha.querySelector('[data-m2]');
     if (m2el) m2el.textContent = cv > 0 && lv > 0 ? (cv * lv).toFixed(4) : '—';
   }
 
-  // Actualizar total do campo (ex: calc-pecas-total)
+  // Actualizar total do campo
   const totalEl = document.getElementById(ctx + '-' + campo + '-total');
   if (totalEl) {
     const total = calcTotalM2(TS[ctx][campo]);
     totalEl.textContent = 'Total: ' + total.toFixed(4) + ' m²';
   }
 
-  // Actualizar resumo
-  if (ctx === 'calc') updateResumoCalc();
-  if (ctx === 'comp') updateResumoComp();
+  // Actualizar resumo — se os ids não existem, re-renderiza o resumo completo
+  if (ctx === 'calc') {
+    const resumoTotal = document.getElementById('resumo-pvp-total');
+    if (resumoTotal) updateResumoCalc();
+    else renderCalculadora(); // primeira vez — resumo ainda não existe
+  }
+  if (ctx === 'comp') {
+    // Actualizar só os totais sem re-renderizar (evita perda de foco)
+    const totalComp = document.getElementById(ctx + '-' + campo + '-total');
+    if (totalComp) {
+      const t = calcTotalM2(TS[ctx][campo]);
+      totalComp.textContent = 'Total: ' + t.toFixed(4) + ' m²';
+    }
+    updateResultadoComp();
+  }
 };
 window.calcAcabamento = function(id, val) {
   TS.calc.acabamentos[id] = parseNum(val);
@@ -1361,7 +1392,7 @@ function renderResultadoComp() {
               <span style="font-size:12px;font-weight:600;color:var(--t1)">${s.artigo ? s.artigo.nome : '—'}</span>
             </div>
             ${s.artigo ? `
-              <div style="font-family:var(--serif);font-size:28px;color:var(--t1);margin-bottom:4px">
+              <div id="comp-total-${l}" style="font-family:var(--serif);font-size:28px;color:var(--t1);margin-bottom:4px">
                 ${total !== null ? fmtPVP(total) : '—'}
               </div>
               <div style="font-size:10px;color:var(--t4)">${s.material} · ${s.espessura}</div>
@@ -1407,7 +1438,54 @@ window.compTransporte = function(idx) {
   TS.comp.transporte = idx;
   renderComparador();
 };
-function updateResumoComp() { renderComparador(); }
+function updateResumoComp() { updateResultadoComp(); }
+
+function updateResultadoComp() {
+  const lados = ['A','B'];
+  const m2Tampo   = calcTotalM2(TS.comp.pecas);
+  const m2Rev     = calcTotalM2(TS.comp.revestimento);
+  const transp    = TS.comp.transporte !== null ? TRANSPORTE[TS.comp.transporte] : null;
+  const pvpTransp = transp ? transp.pvp : 0;
+
+  lados.forEach(l => {
+    const s   = TS.comp.lado[l];
+    if (!s.artigo) return;
+    const mat    = TAMPOS_DB[s.material];
+    const esp    = s.espessura;
+    const pvpM2  = s.artigo.pvp[esp] || 0;
+    const pvpT   = pvpM2 * m2Tampo;
+    const pvpR   = pvpM2 * m2Rev;
+    let pvpAcb   = 0;
+    mat.acabamentos.forEach(acb => {
+      pvpAcb += acb.pvp * (parseNum(TS.comp.acabamentos?.[acb.id]) || 0);
+    });
+    const total = pvpT + pvpR + pvpAcb + pvpTransp;
+
+    // Actualizar elemento de total no DOM
+    const el = document.getElementById('comp-total-' + l);
+    if (el) el.textContent = fmtPVP(total);
+  });
+
+  // Actualizar delta
+  const elA = document.getElementById('comp-total-A');
+  const elB = document.getElementById('comp-total-B');
+  const elD = document.getElementById('comp-delta');
+  if (elA && elB && elD && TS.comp.lado.A.artigo && TS.comp.lado.B.artigo) {
+    // Re-calcular totais para o delta
+    const tots = lados.map(l => {
+      const s   = TS.comp.lado[l];
+      const mat = TAMPOS_DB[s.material];
+      const esp = s.espessura;
+      const pvpM2 = s.artigo.pvp[esp] || 0;
+      let pvpAcb  = 0;
+      mat.acabamentos.forEach(acb => { pvpAcb += acb.pvp * (parseNum(TS.comp.acabamentos?.[acb.id]) || 0); });
+      return pvpM2 * m2Tampo + pvpM2 * m2Rev + pvpAcb + pvpTransp;
+    });
+    const diff = Math.abs(tots[0] - tots[1]);
+    const pct  = diff > 0 ? ((diff / Math.min(...tots)) * 100).toFixed(1) : '0';
+    elD.textContent = 'Δ ' + fmtPVP(diff) + ' (' + pct + '%)';
+  }
+}
 
 // Expor init
 window.switchTampoTab = switchTampoTab;
