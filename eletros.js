@@ -454,8 +454,23 @@ function renderCardEletro(a) {
         <div style="font-size:10px;color:var(--t4);margin-top:1px;font-weight:700;letter-spacing:.06em">${a.marca||''}</div>
       </div>
 
-      <!-- Características -->
-      ${a.caract?`<div style="font-size:10px;color:var(--t3);line-height:1.5;border-top:1px solid rgba(255,255,255,.05);padding-top:6px">${a.caract}</div>`:''}
+      <!-- Características com colapso -->
+      ${a.caract ? `
+      <div style="border-top:1px solid rgba(255,255,255,.05);padding-top:6px">
+        <div id="caract-\${a.ref}" style="font-size:10px;color:var(--t3);line-height:1.55;
+          overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">\${a.caract}</div>
+        <button onclick="(function(btn){
+          var el=document.getElementById('caract-\${a.ref}');
+          var aberto=el.style.webkitLineClamp==='unset';
+          el.style.webkitLineClamp=aberto?'3':'unset';
+          el.style.display=aberto?'-webkit-box':'block';
+          btn.textContent=aberto?'\u25be ver mais':'\u25b4 fechar';
+        })(this)"
+          style="margin-top:4px;padding:0;background:none;border:none;
+          font-size:9px;color:rgba(196,97,42,.6);cursor:pointer;font-family:var(--sans);font-weight:700">
+          \u25be ver mais
+        </button>
+      </div>` : ''}
 
       <!-- Ref + preço -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding-top:6px;border-top:1px solid rgba(255,255,255,.06)">
@@ -522,13 +537,40 @@ window.eletroToggleDetalhe = function(ref) {
     ${artigo.caract?`
     <div style="background:rgba(196,97,42,.06);border:1px solid rgba(196,97,42,.15);border-radius:10px;padding:10px 14px;margin-bottom:14px">
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(196,97,42,.5);margin-bottom:7px">Características</div>
-      ${artigo.caract.split('·').map(c=>`<div style="font-size:11px;color:var(--t2);line-height:1.8;padding:1px 0">· ${c.trim()}</div>`).join('')}
+      <div id="det-caract-${artigo.ref}" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical">
+        ${artigo.caract.split('·').map(c=>`<div style="font-size:11px;color:var(--t2);line-height:1.8;padding:1px 0">· ${c.trim()}</div>`).join('')}
+      </div>
+      ${artigo.caract.length > 120 ? `
+      <button onclick="(function(btn){
+        var el=document.getElementById('det-caract-${artigo.ref}');
+        var aberto=el.style.webkitLineClamp==='unset';
+        el.style.webkitLineClamp=aberto?'4':'unset';
+        el.style.display=aberto?'-webkit-box':'block';
+        btn.textContent=aberto?'\u25be ver mais':'\u25b4 fechar';
+      })(this)"
+        style="margin-top:5px;padding:0;background:none;border:none;font-size:9px;
+        color:rgba(196,97,42,.6);cursor:pointer;font-family:var(--sans);font-weight:700">
+        \u25be ver mais
+      </button>` : ''}
     </div>`:''}
 
     ${artigo.detalhes?`
     <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 14px;margin-bottom:16px">
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);margin-bottom:8px">Detalhes</div>
-      <div style="font-size:12px;color:var(--t2);line-height:1.8">${artigo.detalhes}</div>
+      <div id="det-detalhe-${artigo.ref}" style="font-size:12px;color:var(--t2);line-height:1.8;
+        overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical">${artigo.detalhes}</div>
+      ${artigo.detalhes.length > 150 ? `
+      <button onclick="(function(btn){
+        var el=document.getElementById('det-detalhe-${artigo.ref}');
+        var aberto=el.style.webkitLineClamp==='unset';
+        el.style.webkitLineClamp=aberto?'4':'unset';
+        el.style.display=aberto?'-webkit-box':'block';
+        btn.textContent=aberto?'\u25be ver mais':'\u25b4 fechar';
+      })(this)"
+        style="margin-top:5px;padding:0;background:none;border:none;font-size:9px;
+        color:rgba(196,97,42,.6);cursor:pointer;font-family:var(--sans);font-weight:700">
+        \u25be ver mais
+      </button>` : ''}
     </div>`:''}
 
     <div style="display:flex;flex-direction:column;gap:6px">
@@ -831,18 +873,43 @@ function renderOrcamento() {
                   <div style="margin-bottom:10px">
                     <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
                       color:rgba(196,97,42,.5);margin-bottom:6px">Características</div>
-                    <div style="display:flex;flex-direction:column;gap:3px">
-                      ${a.caract.split('·').map(c=>`
-                        <div style="font-size:11px;color:var(--t2);line-height:1.6">· ${c.trim()}</div>`).join('')}
+                    <div id="orc-caract-${i}" style="display:flex;flex-direction:column;gap:3px;max-height:4.8em;overflow:hidden">
+                      ${a.caract.split('\'·\'').map(c=>`
+                        <div style="font-size:11px;color:var(--t2);line-height:1.6">· ${c.trim()}</div>`).join('\'\'')}
                     </div>
-                  </div>` : ''}
+                    ${(a.caract||'').length > 80 ? `
+                    <button onclick="(function(btn){
+                      var el=document.getElementById('orc-caract-${i}');
+                      var ab=el.dataset.ab==='1';
+                      el.style.maxHeight=ab?'4.8em':'none';
+                      el.dataset.ab=ab?'0':'1';
+                      btn.textContent=ab?'\u25be ver mais':'\u25b4 fechar';
+                    })(this)"
+                      style="margin-top:4px;padding:0;background:none;border:none;font-size:9px;
+                      color:rgba(196,97,42,.6);cursor:pointer;font-family:var(--sans);font-weight:700">
+                      \u25be ver mais
+                    </button>` : ''}
+                  </div>` : '\''}
                 ${a.detalhes ? `
                   <div style="margin-bottom:10px">
                     <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
                       color:var(--t4);margin-bottom:6px">Detalhes</div>
-                    <div style="font-size:11px;color:var(--t3);line-height:1.7">${a.detalhes}</div>
-                  </div>` : ''}
-                ${a.url ? `
+                    <div id="orc-det-txt-${i}" style="font-size:11px;color:var(--t3);line-height:1.7;
+                      overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">${a.detalhes}</div>
+                    ${(a.detalhes||'').length > 120 ? `
+                    <button onclick="(function(btn){
+                      var el=document.getElementById('orc-det-txt-${i}');
+                      var ab=el.style.webkitLineClamp==='unset';
+                      el.style.webkitLineClamp=ab?'3':'unset';
+                      el.style.display=ab?'-webkit-box':'block';
+                      btn.textContent=ab?'\u25be ver mais':'\u25b4 fechar';
+                    })(this)"
+                      style="margin-top:4px;padding:0;background:none;border:none;font-size:9px;
+                      color:rgba(196,97,42,.6);cursor:pointer;font-family:var(--sans);font-weight:700">
+                      \u25be ver mais
+                    </button>` : ''}
+                  </div>` : '\''}
+                                ${a.url ? `
                   <a href="${a.url}" target="_blank" rel="noopener"
                     style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:7px;
                     background:rgba(196,97,42,.1);border:1px solid rgba(196,97,42,.2);
