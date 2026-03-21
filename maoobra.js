@@ -458,7 +458,10 @@ async function moGuardarOrcamento() {
   const ST = getST();
   try {
     await setDoc(doc(db, 'wk_estado', MO_DOC_ORC), { orc: ST.moOrc, ts: Date.now() });
-  } catch (e) { console.warn('MO: erro ao guardar orçamento', e); }
+  } catch (e) {
+    console.warn('MO: erro ao guardar orçamento', e);
+    window.wkToast?.('⚠️ Orçamento não guardado — verifica a ligação');
+  }
 }
 
 async function moGuardarOrdem(chave, ordemCods) {
@@ -468,7 +471,10 @@ async function moGuardarOrdem(chave, ordemCods) {
   window._moOrdem[chave] = ordemCods;
   try {
     await setDoc(doc(db, 'wk_estado', MO_DOC_ORDEM), { ordem: window._moOrdem, ts: Date.now() });
-  } catch (e) { console.warn('MO: erro ao guardar ordem', e); }
+  } catch (e) {
+    console.warn('MO: erro ao guardar ordem', e);
+    window.wkToast?.('⚠️ Ordem não guardada — verifica a ligação');
+  }
 }
 
 // Aplica as ordens guardadas ao MO_SECCOES em memória

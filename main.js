@@ -360,6 +360,35 @@ window.doLogout = async function() {
 };
 
 // ════════════════════════════════════════════════
+// FIREBASE — DIAGNÓSTICO DE ERROS
+// ════════════════════════════════════════════════
+function fbErroMsg(e) {
+  const code = e?.code || '';
+  if (code === 'permission-denied')
+    return '🔒 Sem permissão — as regras do Firestore expiraram.\nVê as instruções no painel de sincronização.';
+  if (code === 'unauthenticated')
+    return '🔐 Sessão expirada — faz logout e login novamente.';
+  if (code.includes('unavailable') || code.includes('network'))
+    return '📡 Sem ligação à internet.';
+  return `⚠️ Erro Firebase: ${code || e?.message || 'desconhecido'}`;
+}
+
+function mostrarErroDB(e) {
+  const msg = fbErroMsg(e);
+  console.error('[Firebase]', e);
+  // Mostrar aviso persistente no sync indicator
+  const sync = document.getElementById('app-sync');
+  if (sync) {
+    sync.textContent = '⚠️ Sem sincronização';
+    sync.style.color = '#ff8a80';
+    sync.title = msg;
+    sync.style.cursor = 'pointer';
+    sync.onclick = () => alert(msg);
+  }
+  toast(msg.split('\n')[0]);
+}
+
+// ════════════════════════════════════════════════
 // FIREBASE — BIBLIOTECA
 // ════════════════════════════════════════════════
 async function bibCarregar() {
@@ -368,13 +397,16 @@ async function bibCarregar() {
     ST.bibItems = [];
     snap.forEach(d => ST.bibItems.push({ id: d.id, ...d.data() }));
     ST.bibItems.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-  } catch (e) { console.error('Erro ao carregar biblioteca:', e); }
+    // Marcar sync como OK
+    const sync = document.getElementById('app-sync');
+    if (sync) { sync.textContent = ''; sync.style.color = ''; sync.onclick = null; }
+  } catch (e) { mostrarErroDB(e); }
 }
 
 async function bibSalvar(item) {
   try {
     await setDoc(doc(_db, 'wk_biblioteca', item.id), item);
-  } catch (e) { console.error('Erro ao guardar:', e); toast('⚠️ Erro ao guardar'); }
+  } catch (e) { mostrarErroDB(e); throw e; }
 }
 
 async function bibApagar(id) {
@@ -383,7 +415,7 @@ async function bibApagar(id) {
     ST.bibItems = ST.bibItems.filter(i => i.id !== id);
     bibRender();
     toast('✓ Item apagado');
-  } catch (e) { toast('⚠️ Erro ao apagar'); }
+  } catch (e) { mostrarErroDB(e); }
 }
 
 // ── RENDER BIBLIOTECA ────────────────────────────────────────────
@@ -451,6 +483,8 @@ function bibRender() {
       ${item.tags ? `<div class="bib-card-tags">${item.tags.split(',').map(t => `<span class="bib-tag">${t.trim()}</span>`).join('')}</div>` : ''}
     </div>`).join('');
 }
+
+window.bibRender = bibRender; // expor para o oninput da pesquisa no HTML
 
 window.bibFiltrarCat = function(cat) { ST.bibCatFiltro = cat; bibRender(); };
 
@@ -521,13 +555,17 @@ window.bibGuardar = async function() {
   window.bibFecharModal();
   bibRender();
 
-  // Persistir no Firebase (com feedback de erro se falhar)
+  // Persistir no Firebase via bibSalvar (lança erro se falhar)
   try {
-    await setDoc(doc(_db, 'wk_biblioteca', item.id), item);
+    await bibSalvar(item);
     toast(isEdit ? '✓ Item actualizado' : '✓ Item criado');
   } catch (e) {
-    console.error('Erro ao guardar no Firebase:', e);
-    toast('⚠️ Guardado localmente — erro de sincronização');
+    // mostrarErroDB já foi chamado dentro de bibSalvar
+    // Reverter mudança local para consistência
+    if (isEdit) {
+      const idx = ST.bibItems.findIndex(i => i.id === item.id);
+      if (idx >= 0) ST.bibItems[idx] = { ...item }; // mantém local mas avisa
+    }
   }
 };
 
@@ -543,12 +581,12 @@ async function chkCarregar() {
     const snap = await getDocs(COL_CHK);
     ST.chkListas = [];
     snap.forEach(d => ST.chkListas.push({ id: d.id, ...d.data() }));
-  } catch (e) { console.error('Erro ao carregar checklists:', e); }
+  } catch (e) { mostrarErroDB(e); }
 }
 
 async function chkSalvar(lista) {
   try { await setDoc(doc(_db, 'wk_checklists', lista.id), lista); }
-  catch (e) { toast('⚠️ Erro ao guardar checklist'); }
+  catch (e) { mostrarErroDB(e); }
 }
 
 const CHK_PREDEFINIDAS = [
@@ -826,16 +864,13 @@ async function cliCarregarHist() {
   try {
     const snap = await getDoc(doc(_db, 'wk_estado', CLI_DOC_ID));
     if (snap.exists()) ST.cliHist = snap.data().hist || [];
-  } catch (e) { console.warn('CLI: erro ao carregar histórico', e); }
+  } catch (e) { mostrarErroDB(e); }
 }
 
 async function cliGuardarHist() {
   try {
-    await setDoc(doc(_db, 'wk_estado', CLI_DOC_ID), {
-      hist: ST.cliHist,
-      ts:   Date.now(),
-    });
-  } catch (e) { console.warn('CLI: erro ao guardar histórico', e); }
+    await setDoc(doc(_db, 'wk_estado', CLI_DOC_ID), { hist: ST.cliHist, ts: Date.now() });
+  } catch (e) { mostrarErroDB(e); }
 }
 
 window.cliRender = function() {
