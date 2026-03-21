@@ -1029,7 +1029,7 @@ function renderResumoCalc() {
   const pvpTotal  = pvpTampo + pvpRev + pvpAcb + pvpTransp;
 
   return `
-    <div style="position:sticky;top:74px">
+    <div id="calc-resumo-wrap" style="position:sticky;top:74px">
       <div class="glass-card" style="padding:18px;display:flex;flex-direction:column;gap:12px">
         <!-- Cabeçalho resumo -->
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--t4)">
@@ -1138,12 +1138,13 @@ window.calcAddPeca = function(ctx, campo) {
   TS[ctx][campo].push({ id: gerarIdPeca(), comp: '', larg: '0.65' });
   renderCalculadora();
   if (ctx === 'comp') {
-    // Actualizar só os totais sem re-renderizar (evita perda de foco)
+    // Actualizar total da secção sem re-renderizar
     const totalComp = document.getElementById(ctx + '-' + campo + '-total');
     if (totalComp) {
       const t = calcTotalM2(TS[ctx][campo]);
       totalComp.textContent = 'Total: ' + t.toFixed(4) + ' m²';
     }
+    // Actualizar resultado comparativo
     updateResultadoComp();
   }
 };
@@ -1151,12 +1152,13 @@ window.calcRemPeca = function(ctx, campo, id) {
   TS[ctx][campo] = TS[ctx][campo].filter(p => p.id !== id);
   renderCalculadora();
   if (ctx === 'comp') {
-    // Actualizar só os totais sem re-renderizar (evita perda de foco)
+    // Actualizar total da secção sem re-renderizar
     const totalComp = document.getElementById(ctx + '-' + campo + '-total');
     if (totalComp) {
       const t = calcTotalM2(TS[ctx][campo]);
       totalComp.textContent = 'Total: ' + t.toFixed(4) + ' m²';
     }
+    // Actualizar resultado comparativo
     updateResultadoComp();
   }
 };
@@ -1184,16 +1186,23 @@ window.calcUpdatePeca = function(ctx, campo, id, key, val) {
   // Actualizar resumo — se os ids não existem, re-renderiza o resumo completo
   if (ctx === 'calc') {
     const resumoTotal = document.getElementById('resumo-pvp-total');
-    if (resumoTotal) updateResumoCalc();
-    else renderCalculadora(); // primeira vez — resumo ainda não existe
+    if (resumoTotal) {
+      updateResumoCalc();
+    } else if (TS.calc.artigo) {
+      // Artigo existe mas resumo ainda não tem as linhas — re-render
+      const resumoWrap = document.getElementById('calc-resumo-wrap');
+      if (resumoWrap) resumoWrap.innerHTML = renderResumoCalc();
+      else renderCalculadora();
+    }
   }
   if (ctx === 'comp') {
-    // Actualizar só os totais sem re-renderizar (evita perda de foco)
+    // Actualizar total da secção sem re-renderizar
     const totalComp = document.getElementById(ctx + '-' + campo + '-total');
     if (totalComp) {
       const t = calcTotalM2(TS[ctx][campo]);
       totalComp.textContent = 'Total: ' + t.toFixed(4) + ' m²';
     }
+    // Actualizar resultado comparativo
     updateResultadoComp();
   }
 };
@@ -1218,6 +1227,14 @@ function updateResumoCalc() {
   const esp    = TS.calc.espessura;
   const artigo = TS.calc.artigo;
   if (!artigo) return;
+
+  // Se o wrapper existe mas o total não, re-render do resumo completo
+  const wrap = document.getElementById('calc-resumo-wrap');
+  const totalEl = document.getElementById('resumo-pvp-total');
+  if (wrap && !totalEl) {
+    wrap.innerHTML = renderResumoCalc();
+    return;
+  }
 
   const m2Tampo = calcTotalM2(TS.calc.pecas);
   const m2Rev   = calcTotalM2(TS.calc.revestimento);
@@ -1342,7 +1359,7 @@ function renderComparador() {
       </div>
 
       <!-- RESULTADO COMPARATIVO -->
-      ${renderResultadoComp()}
+      <div id="comp-resultado-bloco">${renderResultadoComp()}</div>
     </div>`;
 }
 
@@ -1440,50 +1457,51 @@ window.compTransporte = function(idx) {
 };
 function updateResumoComp() { updateResultadoComp(); }
 
+function calcTotalLadoComp(l, m2Tampo, m2Rev, pvpTransp) {
+  const s   = TS.comp.lado[l];
+  if (!s.artigo) return null;
+  const mat   = TAMPOS_DB[s.material];
+  const esp   = s.espessura;
+  const pvpM2 = s.artigo.pvp[esp] || 0;
+  let pvpAcb  = 0;
+  mat.acabamentos.forEach(acb => {
+    pvpAcb += acb.pvp * (parseNum(TS.comp.acabamentos?.[acb.id]) || 0);
+  });
+  return pvpM2 * m2Tampo + pvpM2 * m2Rev + pvpAcb + pvpTransp;
+}
+
 function updateResultadoComp() {
-  const lados = ['A','B'];
   const m2Tampo   = calcTotalM2(TS.comp.pecas);
   const m2Rev     = calcTotalM2(TS.comp.revestimento);
   const transp    = TS.comp.transporte !== null ? TRANSPORTE[TS.comp.transporte] : null;
   const pvpTransp = transp ? transp.pvp : 0;
 
-  lados.forEach(l => {
-    const s   = TS.comp.lado[l];
-    if (!s.artigo) return;
-    const mat    = TAMPOS_DB[s.material];
-    const esp    = s.espessura;
-    const pvpM2  = s.artigo.pvp[esp] || 0;
-    const pvpT   = pvpM2 * m2Tampo;
-    const pvpR   = pvpM2 * m2Rev;
-    let pvpAcb   = 0;
-    mat.acabamentos.forEach(acb => {
-      pvpAcb += acb.pvp * (parseNum(TS.comp.acabamentos?.[acb.id]) || 0);
-    });
-    const total = pvpT + pvpR + pvpAcb + pvpTransp;
-
-    // Actualizar elemento de total no DOM
-    const el = document.getElementById('comp-total-' + l);
-    if (el) el.textContent = fmtPVP(total);
-  });
-
-  // Actualizar delta
+  // Tentar actualizar ids existentes
   const elA = document.getElementById('comp-total-A');
   const elB = document.getElementById('comp-total-B');
   const elD = document.getElementById('comp-delta');
-  if (elA && elB && elD && TS.comp.lado.A.artigo && TS.comp.lado.B.artigo) {
-    // Re-calcular totais para o delta
-    const tots = lados.map(l => {
-      const s   = TS.comp.lado[l];
-      const mat = TAMPOS_DB[s.material];
-      const esp = s.espessura;
-      const pvpM2 = s.artigo.pvp[esp] || 0;
-      let pvpAcb  = 0;
-      mat.acabamentos.forEach(acb => { pvpAcb += acb.pvp * (parseNum(TS.comp.acabamentos?.[acb.id]) || 0); });
-      return pvpM2 * m2Tampo + pvpM2 * m2Rev + pvpAcb + pvpTransp;
-    });
-    const diff = Math.abs(tots[0] - tots[1]);
-    const pct  = diff > 0 ? ((diff / Math.min(...tots)) * 100).toFixed(1) : '0';
-    elD.textContent = 'Δ ' + fmtPVP(diff) + ' (' + pct + '%)';
+
+  if (!elA && !elB) {
+    // Ids não existem — re-renderizar só o bloco de resultado
+    const resBlock = document.getElementById('comp-resultado-bloco');
+    if (resBlock) resBlock.innerHTML = renderResultadoComp();
+    return;
+  }
+
+  // Actualizar cada lado
+  ['A','B'].forEach(l => {
+    const el    = document.getElementById('comp-total-' + l);
+    const total = calcTotalLadoComp(l, m2Tampo, m2Rev, pvpTransp);
+    if (el && total !== null) el.textContent = fmtPVP(total);
+  });
+
+  // Actualizar delta
+  const totA = calcTotalLadoComp('A', m2Tampo, m2Rev, pvpTransp);
+  const totB = calcTotalLadoComp('B', m2Tampo, m2Rev, pvpTransp);
+  if (elD && totA !== null && totB !== null) {
+    const diff = Math.abs(totA - totB);
+    const pct  = diff > 0 ? ((diff / Math.min(totA, totB)) * 100).toFixed(1) : '0';
+    elD.innerHTML = 'Δ ' + fmtPVP(diff) + '<br><span style="font-size:11px;opacity:.6">+' + pct + '%</span>';
   }
 }
 
