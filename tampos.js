@@ -264,7 +264,7 @@ let TS = {
 // ════════════════════════════════════════════════
 function fmtC1(c1cents) {
   if (!c1cents) return '—';
-  return (c1cents / 100).toLocaleString('pt-PT', { minimumFractionDigits: 2 }) + ' €';
+  return String(Math.round(c1cents)); // formato código — não revela margem
 }
 function fmtPVP(pvp) {
   if (!pvp) return '—';
@@ -378,11 +378,17 @@ function renderCatalogo() {
 
     <!-- Pesquisa + filtro grupo -->
     <div class="search-bar">
-      <div class="search-wrap">
+      <div class="search-wrap" style="position:relative">
         <span class="search-icon">⌕</span>
-        <input type="text" class="search-input" placeholder="Pesquisar cor ou referência…"
+        <input type="text" id="tampo-pesquisa-input" class="search-input"
+          placeholder="Pesquisar cor ou referência…"
           value="${TS.pesquisa}"
-          oninput="window.tampoPesquisar(this.value)">
+          oninput="window.tampoPesquisar(this.value)"
+          style="padding-right:30px">
+        ${TS.pesquisa ? `
+          <button onclick="window.tampoClearPesquisa()"
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);font-size:14px;cursor:pointer;line-height:1;padding:2px 4px;border-radius:4px">×</button>
+        ` : ''}
       </div>
       ${grupos.length ? `
         <div style="display:flex;gap:4px;flex-wrap:wrap">
@@ -394,13 +400,35 @@ function renderCatalogo() {
         </div>` : ''}
     </div>
 
-    <!-- Info -->
-    <div class="bib-info">${artigos.length} artigo${artigos.length !== 1 ? 's' : ''} · ${TS.material} · C1 em cêntimos ÷ 100</div>
+    <!-- Info + pesquisa com X -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="bib-info" style="margin:0" id="tampo-info-bar"></div>
+    </div>
 
     <!-- Grid de cards -->
-    <div class="cards-grid">
-      ${artigos.map(a => renderCardTampo(a, mat)).join('')}
-    </div>`;
+    <div class="cards-grid" id="tampo-grid-cards"></div>`;
+
+  // Usar input com id para não re-renderizar — pôr id no campo
+  const inp = document.getElementById('tampo-pesquisa-input');
+  if (inp) inp.value = TS.pesquisa;
+
+  renderCatalogGrid();
+}
+
+function renderCatalogGrid() {
+  const mat   = TAMPOS_DB[TS.material];
+  const pesq  = TS.pesquisa.toLowerCase().trim();
+  const artigos = mat.artigos.filter(a => {
+    const matchGrupo = !TS.grupoFiltro || a.grupo === TS.grupoFiltro;
+    const matchPesq  = !pesq || a.nome.toLowerCase().includes(pesq);
+    return matchGrupo && matchPesq;
+  });
+
+  const info = document.getElementById('tampo-info-bar');
+  if (info) info.textContent = artigos.length + ' artigo' + (artigos.length !== 1 ? 's' : '') + ' · ' + TS.material;
+
+  const grid = document.getElementById('tampo-grid-cards');
+  if (grid) grid.innerHTML = artigos.map(a => renderCardTampo(a, mat)).join('');
 }
 
 function renderCardTampo(a, mat) {
@@ -457,13 +485,22 @@ function renderCardTampo(a, mat) {
           style="flex:1;padding:6px 8px;border-radius:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;transition:all .15s">
           ⚖️ Comparar
         </button>
+        <button onclick="window.tampoEditar('${a.nome}','${TS.material}')"
+          style="padding:6px 9px;border-radius:7px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--t4);font-size:10px;cursor:pointer;transition:all .15s"
+          title="Editar este artigo">✏️</button>
       </div>
     </div>`;
 }
 
-window.tampoSelectMaterial = function(m) { TS.material = m; TS.grupoFiltro = ''; renderCatalogo(); };
-window.tampoFiltroGrupo    = function(g) { TS.grupoFiltro = g; renderCatalogo(); };
-window.tampoPesquisar      = function(v) { TS.pesquisa = v; renderCatalogo(); };
+window.tampoSelectMaterial = function(m) { TS.material = m; TS.grupoFiltro = ''; TS.pesquisa = ''; renderCatalogo(); };
+window.tampoFiltroGrupo    = function(g) { TS.grupoFiltro = g; renderCatalogGrid(); };
+window.tampoPesquisar      = function(v) { TS.pesquisa = v; renderCatalogGrid(); };
+window.tampoClearPesquisa  = function() {
+  TS.pesquisa = '';
+  const inp = document.getElementById('tampo-pesquisa-input');
+  if (inp) inp.value = '';
+  renderCatalogGrid();
+};
 
 window.tampoVerC1 = function(nome, esp, btn) {
   const mat = TAMPOS_DB[TS.material];
@@ -722,9 +759,13 @@ function renderResumoCalc() {
       const val = acb.pvp * qty;
       pvpAcb += val;
       linhasAcb += `
-        <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11px">
-          <span style="color:var(--t3)">${acb.nome} ×${qty}</span>
-          <span style="font-family:var(--mono);color:var(--t2)">${fmtPVP(val)}</span>
+        <div style="display:grid;grid-template-columns:1fr 90px 90px;gap:4px;padding:4px 0;font-size:11px;align-items:center">
+          <span style="color:var(--t3)">${acb.nome} ×${qty}${acb.unid}</span>
+          <button onclick="window.copiar('${acb.c1}',this)"
+            style="font-family:var(--mono);font-size:11px;font-weight:700;text-align:right;background:none;border:none;color:rgba(255,190,152,.6);cursor:pointer;padding:0">
+            ${fmtC1(acb.c1)} ⎘
+          </button>
+          <span style="font-family:var(--mono);color:var(--t2);text-align:right">${fmtPVP(val)}</span>
         </div>`;
     }
   });
@@ -762,21 +803,39 @@ function renderResumoCalc() {
         <!-- Linhas de detalhe PVP -->
         ${artigo && (m2Tampo > 0 || m2Rev > 0) ? `
           <div style="border-top:1px solid rgba(255,255,255,.07);padding-top:10px;display:flex;flex-direction:column;gap:3px">
+            <!-- cabeçalho colunas -->
+            <div style="display:grid;grid-template-columns:1fr 90px 90px;gap:4px;padding:2px 0 6px;border-bottom:1px solid rgba(255,255,255,.06)">
+              <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">Descrição</span>
+              <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(196,97,42,.5);text-align:right">C1</span>
+              <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);text-align:right">PVP</span>
+            </div>
             ${m2Tampo > 0 ? `
-              <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11px">
+              <div style="display:grid;grid-template-columns:1fr 90px 90px;gap:4px;padding:4px 0;font-size:11px;align-items:center">
                 <span style="color:var(--t3)">Tampo ${m2Tampo.toFixed(4)}m²</span>
-                <span style="font-family:var(--mono);color:var(--t2)">${fmtPVP(pvpTampo)}</span>
+                <button onclick="window.copiar('${artigo.c1[esp]}',this)"
+                  style="font-family:var(--mono);font-size:11px;font-weight:700;text-align:right;background:none;border:none;color:rgba(255,190,152,.6);cursor:pointer;padding:0">
+                  ${fmtC1(artigo.c1[esp])} ⎘
+                </button>
+                <span style="font-family:var(--mono);color:var(--t2);text-align:right">${fmtPVP(pvpTampo)}</span>
               </div>` : ''}
             ${m2Rev > 0 ? `
-              <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11px">
+              <div style="display:grid;grid-template-columns:1fr 90px 90px;gap:4px;padding:4px 0;font-size:11px;align-items:center">
                 <span style="color:var(--t3)">Revestimento ${m2Rev.toFixed(4)}m²</span>
-                <span style="font-family:var(--mono);color:var(--t2)">${fmtPVP(pvpRev)}</span>
+                <button onclick="window.copiar('${artigo.c1[TS.calc.espRev || esp]}',this)"
+                  style="font-family:var(--mono);font-size:11px;font-weight:700;text-align:right;background:none;border:none;color:rgba(255,190,152,.6);cursor:pointer;padding:0">
+                  ${fmtC1(artigo.c1[TS.calc.espRev || esp])} ⎘
+                </button>
+                <span style="font-family:var(--mono);color:var(--t2);text-align:right">${fmtPVP(pvpRev)}</span>
               </div>` : ''}
             ${linhasAcb}
             ${transp ? `
-              <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11px">
+              <div style="display:grid;grid-template-columns:1fr 90px 90px;gap:4px;padding:4px 0;font-size:11px;align-items:center">
                 <span style="color:var(--t3)">Transporte ${transp.label}</span>
-                <span style="font-family:var(--mono);color:var(--t2)">${fmtPVP(pvpTransp)}</span>
+                <button onclick="window.copiar('${transp.c1}',this)"
+                  style="font-family:var(--mono);font-size:11px;font-weight:700;text-align:right;background:none;border:none;color:rgba(255,190,152,.6);cursor:pointer;padding:0">
+                  ${fmtC1(transp.c1)} ⎘
+                </button>
+                <span style="font-family:var(--mono);color:var(--t2);text-align:right">${fmtPVP(pvpTransp)}</span>
               </div>` : ''}
           </div>
 
@@ -895,6 +954,15 @@ function renderComparador() {
 
   ct.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:14px">
+
+      <!-- Botão modo apresentação -->
+      <div style="display:flex;justify-content:flex-end">
+        <button onclick="window.tampoModoApresentacao()"
+          style="display:flex;align-items:center;gap:7px;padding:8px 16px;border-radius:8px;background:rgba(42,107,122,.12);border:1px solid rgba(42,107,122,.3);color:rgba(150,220,230,.75);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s"
+          title="Abrir vista limpa para mostrar ao cliente">
+          🖥️ Modo Apresentação
+        </button>
+      </div>
 
       <!-- Selecção de artigos A e B -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -1132,4 +1200,204 @@ window.calcParaComparador = function() {
 window.compLimparLado = function(l) {
   TS.comp.lado[l].artigo = null;
   renderComparador();
+};
+
+
+// ════════════════════════════════════════════════
+// EDITAR ARTIGO DE TAMPO
+// ════════════════════════════════════════════════
+window.tampoEditar = function(nome, material) {
+  const mat    = TAMPOS_DB[material];
+  const idx    = mat.artigos.findIndex(a => a.nome === nome);
+  const artigo = mat.artigos[idx];
+  if (!artigo) return;
+
+  // Criar modal de edição
+  let modal = document.getElementById('tampo-modal-editar');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'tampo-modal-editar';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px';
+    document.body.appendChild(modal);
+  }
+
+  const esps = mat.espessuras;
+  const c1Fields  = esps.map(e => `
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <label style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">C1 ${e} (cêntimos)</label>
+      <input type="number" id="edit-c1-${e.replace('.','_')}" value="${artigo.c1[e] || ''}"
+        style="padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:7px;font-family:var(--mono);font-size:13px;color:var(--t1);outline:none">
+    </div>`).join('');
+  const pvpFields = esps.map(e => `
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <label style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">PVP ${e} (€/m²)</label>
+      <input type="number" id="edit-pvp-${e.replace('.','_')}" value="${artigo.pvp[e] || ''}"
+        style="padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:7px;font-family:var(--mono);font-size:13px;color:var(--t1);outline:none">
+    </div>`).join('');
+
+  modal.innerHTML = `
+    <div style="background:#1C1C1F;border-radius:18px;width:100%;max-width:480px;border:1px solid rgba(255,255,255,.1);position:relative;overflow:hidden">
+      <!-- linha brasa topo -->
+      <div style="position:absolute;top:0;left:20px;right:20px;height:1px;background:linear-gradient(90deg,transparent,rgba(196,97,42,.4),transparent)"></div>
+
+      <div style="padding:20px 22px 16px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-family:Georgia,serif;font-size:18px;color:var(--t1)">Editar Artigo</div>
+          <div style="font-size:11px;color:var(--t4);margin-top:2px">${material} · ${artigo.grupo || ''}</div>
+        </div>
+        <button onclick="document.getElementById('tampo-modal-editar').remove()"
+          style="background:none;border:none;font-size:20px;color:var(--t4);cursor:pointer">×</button>
+      </div>
+
+      <div style="padding:20px 22px;display:flex;flex-direction:column;gap:14px">
+        <!-- Nome -->
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">Nome</label>
+          <input type="text" id="edit-nome" value="${artigo.nome}"
+            style="padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:7px;font-family:var(--sans);font-size:13px;color:var(--t1);outline:none">
+        </div>
+        <!-- C1 por espessura -->
+        <div style="display:grid;grid-template-columns:${esps.map(()=>'1fr').join(' ')};gap:10px">
+          ${c1Fields}
+        </div>
+        <!-- PVP por espessura -->
+        <div style="display:grid;grid-template-columns:${esps.map(()=>'1fr').join(' ')};gap:10px">
+          ${pvpFields}
+        </div>
+        <!-- Grupo -->
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">Grupo / Gama</label>
+          <input type="text" id="edit-grupo" value="${artigo.grupo || ''}"
+            style="padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:7px;font-family:var(--sans);font-size:12px;color:var(--t1);outline:none">
+        </div>
+        <!-- Disponibilidade -->
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input type="checkbox" id="edit-consulta" ${artigo.consulta ? 'checked' : ''}
+            style="width:16px;height:16px;accent-color:var(--peach-dark)">
+          <span style="font-size:12px;color:var(--t2)">Sob consulta / indisponível</span>
+        </label>
+      </div>
+
+      <div style="padding:14px 22px 20px;display:flex;justify-content:flex-end;gap:8px;border-top:1px solid rgba(255,255,255,.07)">
+        <button onclick="document.getElementById('tampo-modal-editar').remove()"
+          style="padding:9px 18px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--t3);font-family:var(--sans);font-size:13px;cursor:pointer">
+          Cancelar
+        </button>
+        <button onclick="window.tampoGuardarEdicao('${material}',${idx})"
+          style="padding:9px 20px;border-radius:8px;background:rgba(196,97,42,.15);border:1px solid rgba(196,97,42,.3);color:rgba(255,190,152,.85);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer">
+          Guardar
+        </button>
+      </div>
+    </div>`;
+
+  // Focus no nome
+  setTimeout(() => document.getElementById('edit-nome')?.focus(), 100);
+};
+
+window.tampoGuardarEdicao = function(material, idx) {
+  const mat    = TAMPOS_DB[material];
+  const artigo = mat.artigos[idx];
+  const esps   = mat.espessuras;
+
+  artigo.nome    = document.getElementById('edit-nome')?.value?.trim() || artigo.nome;
+  artigo.grupo   = document.getElementById('edit-grupo')?.value?.trim() || artigo.grupo;
+  artigo.consulta= document.getElementById('edit-consulta')?.checked || false;
+
+  esps.forEach(e => {
+    const key = e.replace('.','_');
+    const c1v = parseFloat(document.getElementById('edit-c1-' + key)?.value);
+    const pvpv= parseFloat(document.getElementById('edit-pvp-' + key)?.value);
+    if (!isNaN(c1v))  artigo.c1[e]  = c1v;
+    if (!isNaN(pvpv)) artigo.pvp[e] = pvpv;
+  });
+
+  document.getElementById('tampo-modal-editar')?.remove();
+  renderCatalogGrid();
+  window.wkToast('✓ Artigo actualizado');
+};
+
+// ════════════════════════════════════════════════
+// MODO APRESENTAÇÃO — COMPARADOR
+// ════════════════════════════════════════════════
+window.tampoModoApresentacao = function() {
+  const lados = ['A','B'];
+  const m2Tampo = calcTotalM2(TS.comp.pecas);
+  const m2Rev   = calcTotalM2(TS.comp.revestimento);
+  const transp  = TS.comp.transporte !== null ? TRANSPORTE[TS.comp.transporte] : null;
+  const pvpTransp = transp ? transp.pvp : 0;
+
+  const dados = lados.map(l => {
+    const s   = TS.comp.lado[l];
+    const mat = TAMPOS_DB[s.material];
+    if (!s.artigo) return null;
+    const esp    = s.espessura;
+    const pvpM2  = s.artigo.pvp[esp] || 0;
+    const pvpT   = pvpM2 * m2Tampo;
+    const pvpR   = pvpM2 * m2Rev;
+    let pvpAcb   = 0;
+    mat.acabamentos.forEach(acb => {
+      pvpAcb += acb.pvp * (parseFloat(TS.comp.acabamentos[acb.id]) || 0);
+    });
+    return { nome: s.artigo.nome, material: s.material, esp, total: pvpT + pvpR + pvpAcb + pvpTransp };
+  });
+
+  if (!dados[0] && !dados[1]) { window.wkToast('⚠️ Selecciona dois artigos primeiro'); return; }
+
+  const win = window.open('', '_blank', 'width=900,height=600');
+  const corA = '#C4612A', corB = '#2A6B7A';
+
+  const diff    = dados[0] && dados[1] ? Math.abs(dados[0].total - dados[1].total) : null;
+  const maisEco = diff !== null ? (dados[0].total < dados[1].total ? 'A' : 'B') : null;
+
+  const fmtP = v => v.toLocaleString('pt-PT', { minimumFractionDigits: 2 }) + ' €';
+
+  win.document.write(`<!DOCTYPE html><html lang="pt"><head>
+    <meta charset="UTF-8">
+    <title>Comparação de Tampos</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0;}
+      body{font-family:'DM Sans',sans-serif;background:#0E0E10;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;}
+      .titulo{font-family:'DM Serif Display',serif;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:40px;text-align:center}
+      .grid{display:grid;grid-template-columns:1fr auto 1fr;gap:24px;align-items:center;width:100%;max-width:760px;}
+      .lado{border-radius:20px;padding:28px 24px;text-align:center;}
+      .lado-nome{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:4px;}
+      .lado-mat{font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:20px;}
+      .lado-total{font-family:'DM Serif Display',serif;font-size:42px;margin-bottom:8px;}
+      .lado-tag{display:inline-block;padding:4px 12px;border-radius:99px;font-size:11px;font-weight:600;margin-top:8px;}
+      .versus{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,.2);text-align:center;}
+      .diff-val{font-family:'DM Serif Display',serif;font-size:22px;color:rgba(255,255,255,.6);text-align:center;margin-top:8px;}
+      .diff-pct{font-size:11px;color:rgba(255,255,255,.3);text-align:center;margin-top:4px;}
+      .fechar{position:fixed;top:16px;right:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:7px 14px;color:rgba(255,255,255,.4);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;}
+      .nota{font-size:11px;color:rgba(255,255,255,.15);text-align:center;margin-top:40px;letter-spacing:.05em;}
+    </style>
+  </head><body>
+    <button class="fechar" onclick="window.close()">× Fechar</button>
+    <div class="titulo">Comparação de Tampos · ${new Date().toLocaleDateString('pt-PT')}</div>
+    <div class="grid">
+      ${dados.map((d, i) => {
+        if (!d) return '<div></div>';
+        const l   = lados[i];
+        const cor = l === 'A' ? corA : corB;
+        const eco = maisEco === l;
+        return `<div class="lado" style="background:${cor}18;border:1.5px solid ${cor}44">
+          <div class="lado-nome" style="color:${cor === corA ? '#FFD4B5' : '#A8D8E0'}">${d.nome}</div>
+          <div class="lado-mat" style="color:rgba(255,255,255,.3)">${d.material} · ${d.esp}</div>
+          <div class="lado-total" style="color:#fff">${fmtP(d.total)}</div>
+          <div class="lado-tag" style="background:${eco ? 'rgba(58,122,68,.3)' : 'rgba(192,57,43,.2)'};color:${eco ? '#a8e6a8' : '#ffb3a0'}">
+            ${eco ? '▼ Mais económico' : '▲ Mais caro'}
+          </div>
+        </div>`;
+      }).join('')}
+      <div>
+        <div class="versus">vs</div>
+        ${diff !== null ? `
+          <div class="diff-val">Δ ${fmtP(diff)}</div>
+          <div class="diff-pct">+${((diff / Math.min(...dados.filter(Boolean).map(d=>d.total)))*100).toFixed(1)}%</div>
+        ` : ''}
+      </div>
+    </div>
+    ${transp ? `<div class="nota">Inclui transporte ${transp.label} · ${fmtP(pvpTransp)}</div>` : ''}
+  </body></html>`);
+  win.document.close();
 };
