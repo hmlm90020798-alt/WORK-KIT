@@ -353,12 +353,17 @@ function renderTampoHeader() {
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <!-- Badge Anigraco -->
-        <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:6px 12px">
+        <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:6px 12px;flex-wrap:wrap">
           <span style="font-size:10px;color:var(--t4);font-weight:700;text-transform:uppercase;letter-spacing:.1em">Fornecedor</span>
           <span style="color:var(--t2);font-weight:600;font-size:12px">ANIGRACO</span>
           <button onclick="copiar('207849',this)"
             style="font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(196,97,42,.12);border:1px solid rgba(196,97,42,.25);color:rgba(255,190,152,.7);cursor:pointer;transition:all .15s"
             title="Copiar código LM">207849</button>
+          <span style="width:1px;height:14px;background:rgba(255,255,255,.12)"></span>
+          <span style="font-size:10px;color:var(--t4);font-weight:700;text-transform:uppercase;letter-spacing:.1em">Acesso tabela</span>
+          <button onclick="copiar('COD 48 SILES',this)"
+            style="font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(42,107,122,.12);border:1px solid rgba(42,107,122,.3);color:rgba(150,220,230,.7);cursor:pointer;transition:all .15s"
+            title="Copiar código de acesso à tabela">COD 48 SILES</button>
         </div>
         <!-- Tabs -->
         <div style="display:flex;gap:4px">
