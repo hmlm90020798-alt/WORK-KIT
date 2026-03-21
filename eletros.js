@@ -16,129 +16,119 @@ export const ELETRO_DB = [
   {
     tipo: 'Placa', icon: '🔥', cor: '#C4612A', essencial: true,
     artigos: [
-      { ref:'93603006', nome:'Placa Indução 4 zonas 60cm preto TEKA IDY 641Y BK',                  marca:'TEKA',  preco:289, url:'https://www.leroymerlin.pt/pesquisa/93603006',
-        caract:'4 zonas · Touch MonoSlider · Sensor recipiente · Bloqueio segurança · Detetor recipiente',
-        detalhes:'Modelo sem aro exterior. Vidro cerâmico 4mm. Painel Touch Control MonoSlider com sensores acústicos e bloqueio de segurança. Sistema de otimização de recipiente. Função Power. Programação do tempo de cozinhado até 99 minutos. Desligar automático de segurança.' },
-      { ref:'93418142', nome:'Placa Indução 4 zonas 7kW 59×52cm preto CATA IB 6324 E2 BK',         marca:'CATA',  preco:225, url:'https://www.leroymerlin.pt/pesquisa/93418142',
-        caract:'4 zonas · 7kW · Booster 4 zonas · 9 níveis potência · Conectividade exaustor',
-        detalhes:'Placa indução encastre 4 zonas. Conectividade com exaustor compatível. Controlo táctil. Booster nas 4 zonas. 9 níveis de potência. Potência máx. 7kW.' },
-      { ref:'95573263', nome:'Placa Indução 4 zonas 7200W 58×51cm preto AEG TN64IA0BIB',            marca:'AEG',   preco:399, url:'https://www.leroymerlin.pt/pesquisa/95573263',
-        caract:'4 zonas PowerBoost · Hob2Hood · Função Pausa · Sem moldura · 7200W',
-        detalhes:'★ A Melhor Escolha. Série 5000 Fast & Powerful, 60cm. 4 zonas: 21cm, 2×18cm e 14,5cm. Controlos 0-14 com PowerBoost e temporizador individual. Função Pausa. Hob2Hood® liga placa ao exaustor automaticamente. Design sem moldura.' },
-      { ref:'90215362', nome:'Placa Indução 4 zonas 60cm preto Haier HAISJ64MC',                    marca:'HAIER', preco:389, url:'https://www.leroymerlin.pt/pesquisa/90215362',
-        caract:'4 zonas · Vidro Facetado · Booster · Multi Slider · 9 níveis · WiFi + Bluetooth',
-        detalhes:'Placa indução 60cm. 4 zonas. Vidro facetado. Booster. Multi Slider. 9 níveis de potência. Timer. Função Pausa. WiFi + Bluetooth, App hOn.' },
-      { ref:'91927008', nome:'Placa Indução 4 zonas 6600W 59×52cm preto Candy CTP644MCBB/1',        marca:'CANDY', preco:369, url:'https://www.leroymerlin.pt/pesquisa/91927008',
-        caract:'4 zonas · 6600W · Booster · Zona extensível · Segurança infantil',
-        detalhes:'Placa indução encastrar 4 zonas. Potência total 6600W. Cor preta, vidro. Booster, zona extensível, segurança infantil e proteção contra sobreaquecimento.' },
+      { ref:'93603006', nome:'Placa Indução 4 zonas 60 cm preto TEKA IDY 641Y BK', marca:'TEKA', preco:289, url:'https://www.leroymerlin.pt/produtos/placa-inducao-4-zonas-60-cm-preto-teka-idy-641y-bk-93603006.html',
+        caract:'Modelo sem aro exterior Vidro cerâmico 4 mm altura Painel Touch Control MonoSlider c/ sensores acústicos e bloqueio de segurança Sistema de otimização de recipiente Função Power Programação do tempo de cozinhado até 99 minutos (possib. programar todas as zonas de cozinhado em simultâneo) Detetor de recipiente 4 zonas de cozinhado Indicadores de calor residual Desligar automático de segurança',
+        detalhes:'Modelo sem aro exterior Vidro cerâmico 4 mm altura Painel Touch Control MonoSlider c/ sensores acústicos e bloqueio de segurança Sistema de otimização de recipiente Função Power Programação do tempo de cozinhado até 99 minutos (possib. programar todas as zonas de cozinhado em simultâneo) Detetor de recipiente 4 zonas de cozinhado Indicadores de calor residual Desligar automático de segurança', nota:'' },
+      { ref:'93418142', nome:'Placa de indução 4 zonas 7Kw 59 x 52 x 5,8 cm preto Cata IB 6324 E2 BK', marca:'CATA', preco:225, url:'https://www.leroymerlin.pt/produtos/placa-de-inducao-4-zonas-7kw-59-x-52-x-5-8-cm-preto-cata-ib-6324-e2-bk-93418142.html',
+        caract:'PLACA INDUÇÃO ENCASTRE 4 ZONAS. CONECTIVIDADE COM EXAUSTOR COMPATIVEL. CONTROLE TÁTIL. BOOSTER NAS 4 ZONAS. 9 NIVEIS DE POTÊNCIA. POTÊNCIA MAX. 7 kW.',
+        detalhes:'PLACA INDUÇÃO ENCASTRE 4 ZONAS. CONECTIVIDADE COM EXAUSTOR COMPATIVEL. CONTROLE TÁTIL. BOOSTER NAS 4 ZONAS. 9 NIVEIS DE POTÊNCIA. POTÊNCIA MAX. 7 kW.', nota:'' },
+      { ref:'95573263', nome:'Placa de indução de encastrar 4 zonas 7200 W 58 x 51 4.4 cm preto AEG TN64IA0BIB', marca:'AEG', preco:399, url:'https://www.leroymerlin.pt/produtos/placa-de-inducao-de-encastrar-4-zonas-7200-w-58-x-51-4-4-cm-preto-aeg-tn64ia0bib-95573263.html',
+        caract:'Serie 5000 Fast & Powerfull, 60 cm, 4 zonas: 21 cm, 2x18 cm e 14,5 cm, Controlos (0-14 com 4 zonas PowerBoost) individuais com temporizador individual, Função Pausa, Bloqueio de segurança, H2H, Sem moldura O Powerboost acelera o já rápido aquecimento das placas de indução, mantendo-se, ao mesmo tempo, altamente eficiente. A função Hob2Hood® liga a placa ao exaustor. O exaustor ajusta automaticamente a velocidade de extração de acordo com a potência da placa, sem que tenha de levantar um dedo. Para uma uma extração poderosa ao selar. E mais silenciosa enquanto cozinha.',
+        detalhes:'Serie 5000 Fast & Powerfull, 60 cm, 4 zonas: 21 cm, 2x18 cm e 14,5 cm, Controlos (0-14 com 4 zonas PowerBoost) individuais com temporizador individual, Função Pausa, Bloqueio de segurança, H2H, Sem moldura O Powerboost acelera o já rápido aquecimento das placas de indução, mantendo-se, ao mesmo tempo, altamente eficiente. A função Hob2Hood® liga a placa ao exaustor. O exaustor ajusta automaticamente a velocidade de extração de acordo com a potência da placa, sem que tenha de levantar um dedo. Para uma uma extração poderosa ao selar. E mais silenciosa enquanto cozinha.', nota:'* A MELHOR ESCOLHA' },
+      { ref:'90215362', nome:'Placa de indução de encastrar 4 zonas 60cm preto Haier HAISJ64MC', marca:'HAIER', preco:389, url:'https://www.leroymerlin.pt/produtos/placa-de-inducao-de-encastrar-4-zonas-60cm-preto-haier-haisj64mc-90215362.html',
+        caract:'Placa Indução 60cm; 4 Zonas; Vidro Facetado; Booster; Multi Slider; 9 Níveis; Timer; Função Pausa; WiFi + Bluetooth, hOn App',
+        detalhes:'Placa Indução 60cm; 4 Zonas; Vidro Facetado; Booster; Multi Slider; 9 Níveis; Timer; Função Pausa; WiFi + Bluetooth, hOn App', nota:'' },
+      { ref:'91927008', nome:'Placa de indução 4 zonas de calor 6600 W 59 x 52 cm preto Candy CTP644MCBB/1', marca:'CANDY', preco:369, url:'https://www.leroymerlin.pt/produtos/placa-de-inducao-4-zonas-de-calor-6600-w-59-x-52-cm-preto-candy-ctp644mcbb-1-91927008.html',
+        caract:'A placa de indução Candy CTP644MCBB/1 é um modelo de encastrar, com 4 zonas de calor e uma potência total de 6600 W. É de cor preta, feita de vidro, e possui funcionalidades como Booster, zona extensível, segurança infantil e segurança contra o sobreaquecimento.',
+        detalhes:'A placa de indução Candy CTP644MCBB/1 é um modelo de encastrar, com 4 zonas de calor e uma potência total de 6600 W. É de cor preta, feita de vidro, e possui funcionalidades como Booster, zona extensível, segurança infantil e segurança contra o sobreaquecimento.', nota:'' },
     ],
   },
   {
     tipo: 'Forno', icon: '🍳', cor: '#8B4513', essencial: true,
     artigos: [
-      { ref:'93470587', nome:'Forno Multifunções 71L 59×55cm preto Bosch HBA514S3',                 marca:'BOSCH', preco:379, url:'https://www.leroymerlin.pt/pesquisa/93470587',
-        caract:'71L · 7 modos · Limpeza aqualítica · A+ · Calha telescópica',
-        detalhes:'SER4, Forno multifunções 60cm. Painel inox, porta vidro preto. 71 litros, A+. Comandos rotativos com visor LED. 7 modos de aquecimento. Limpeza aqualítica manual. Calha telescópica 1 nível. Porta com 3 vidros CoolTouch.' },
-      { ref:'95568582', nome:'Forno Multifunções Pirolítico 72L 59×56cm cinza AEG OU5PB40SM',       marca:'AEG',   preco:450, url:'https://www.leroymerlin.pt/pesquisa/95568582',
-        caract:'72L · Pirólise · 9+45 programas · Display LED · A++ · Inox Infinity',
-        detalhes:'Série 5000 SurroundCook. 72L, 60cm. Limpeza pirolítica. 9 prog + 45 auto prog. Display LED EXPlore. Botões escamoteáveis inox. 4 vidros, A++. Inox Infinity.' },
-      { ref:'91664974', nome:'Forno Multifunções 63,5×65,5cm cinza TEKA HCB 6434',                  marca:'TEKA',  preco:285, url:'https://www.leroymerlin.pt/pesquisa/91664974',
-        caract:'8 funções · Hydroclean PRO · Touch Control · Porta duplo vidro · A+',
-        detalhes:'Forno TEKA multifunções. 8 funções de cozinhado com limpeza Hydroclean PRO®. Touch Control com programação início/fim cozinhado. Bloqueio segurança crianças. Porta duplo vidro. Classificação energética A+.' },
-      { ref:'84780952', nome:'Forno Pirolítico 71L 59×56cm cinza TEKA HCB 6535P',                   marca:'TEKA',  preco:399, url:'https://www.leroymerlin.pt/pesquisa/84780952',
-        caract:'71L · Pirólise + Hydroclean PRO · 8 funções · Guia telescópica · 5 alturas',
-        detalhes:'★ A Melhor Escolha. DualClean: pirólise automática (3 níveis) + Hydroclean PRO automático. Touch Control. SurroundTemp 8 funções. 1 guia telescópica Plus Extension. 5 alturas. Porta triplo vidro.' },
-      { ref:'95554459', nome:'Forno Multifunções 72L 59×56cm cinza AEG OU5AB21FSM',                 marca:'AEG',   preco:383, url:'https://www.leroymerlin.pt/pesquisa/95554459',
-        caract:'72L · Aqua Clean · 9 programas · Display LED · A+ · SurroundCook',
-        detalhes:'Série 5000 SurroundCook. 72L, 60cm. Aqua Clean. 9 programas. Display LED. Botões escamoteáveis inox. Calha 1 nível. 2 vidros, A+. Inox Infinity.' },
+      { ref:'93470587', nome:'Forno multifunções 71L 59.4x54.8x59.5 cm preto Bosch HBA514S3', marca:'BOSCH', preco:379, url:'https://www.leroymerlin.pt/produtos/forno-multifuncoes-71l-59-4x54-8x59-5-cm-preto-bosch-hba514s3-93470587.html',
+        caract:'SER4, Forno multifunções, 60 cm, aço inox (painel) & porta em vidro preto, 71 litros, A+, comandos rotativos rebatíveis com visor LED (vermelho), 7 modos de aquecimento, assistente de limpeza aqualítica manual, calha telescópica com 1 nível, porta com 3 vidros CoolTouch, relógio eletrónico (horas, alarme, programação de início e fim de cozedura)',
+        detalhes:'SER4, Forno multifunções, 60 cm, aço inox (painel) & porta em vidro preto, 71 litros, A+, comandos rotativos rebatíveis com visor LED (vermelho), 7 modos de aquecimento, assistente de limpeza aqualítica manual, calha telescópica com 1 nível, porta com 3 vidros CoolTouch, relógio eletrónico (horas, alarme, programação de início e fim de cozedura)', nota:'' },
+      { ref:'95568582', nome:'Forno de encastrar multifunções 72 L 59X56X55 cm cinza AEG OU5PB40SM', marca:'AEG', preco:450, url:'https://www.leroymerlin.pt/produtos/forno-de-encastrar-multifuncoes-72-l-59x56x55-cm-cinza-aeg-ou5pb40sm-95568582.html',
+        caract:'Serie 5000 SurroundCook, 72L., 60 cm, Limpeza Pirolitica, 9 Prog + 45 Auto prog, Display LED EXPlore, Botões escamoteaveis Inox, 4 vidros, A++, Inox Infinity e puxador Inox Infinity. O EXPlore permite-lhe controlar facilmente as definições do seu forno para saber o que está a acontecer com a sua cozedura. Com o ecrã LED, cinco botões táteis e dois botões rotativos, pode ver facilmente a hora, a temperatura e o progresso do seu prato. Cozinhe utilizando três tabuleiros com resultados perfeitos e poupe até 20% de tempo e energia no processo.',
+        detalhes:'Serie 5000 SurroundCook, 72L., 60 cm, Limpeza Pirolitica, 9 Prog + 45 Auto prog, Display LED EXPlore, Botões escamoteaveis Inox, 4 vidros, A++, Inox Infinity e puxador Inox Infinity. O EXPlore permite-lhe controlar facilmente as definições do seu forno para saber o que está a acontecer com a sua cozedura. Com o ecrã LED, cinco botões táteis e dois botões rotativos, pode ver facilmente a hora, a temperatura e o progresso do seu prato. Cozinhe utilizando três tabuleiros com resultados perfeitos e poupe até 20% de tempo e energia no processo.', nota:'' },
+      { ref:'91664974', nome:'Forno de encastrar multifunções 63,5 x 65,5 x 65 cm cinza Teka HCB 6434', marca:'TEKA', preco:285, url:'https://www.leroymerlin.pt/produtos/forno-de-encastrar-multifuncoes-63-5-x-65-5-x-65-cm-cinza-teka-hcb-6434-91664974.html',
+        caract:'Forno TEKA multifunções - 8 funções de cozinhado com sistema de limpeza Teka Hydroclean PRO®; Painel de comandos Touch Control com programação de início e fim de cozinhado; Comandos pulsantes; Bloqueio de segurança para crianças no painel de comandos; Porta de vidro duplo; Bandeja rasa esmaltada e grelha c/ retenção de segurança; Cavidade interior esmaltada para encaixe de bandeja e grelha; Classificação energética: A+',
+        detalhes:'Forno TEKA multifunções - 8 funções de cozinhado com sistema de limpeza Teka Hydroclean PRO®; Painel de comandos Touch Control com programação de início e fim de cozinhado; Comandos pulsantes; Bloqueio de segurança para crianças no painel de comandos; Porta de vidro duplo; Bandeja rasa esmaltada e grelha c/ retenção de segurança; Cavidade interior esmaltada para encaixe de bandeja e grelha; Classificação energética: A+', nota:'' },
+      { ref:'84780952', nome:'Forno multifunções pirolítico 71 litros 59.5 x 55.9 x 59.5 cm cinza Teka HCB 6535P', marca:'TEKA', preco:399, url:'https://www.leroymerlin.pt/produtos/forno-multifuncoes-pirolitico-71-litros-59-5-x-55-9-x-59-5-cm-cinza-teka-hcb-6535p-84780952.html',
+        caract:'Sistema de limpeza DualClean: Auto limpeza pirolítica (3 níveis) + Teka Hydroclean® PRO automático Painel Touch Control com comandos pulsantes Multifunções SurroundTemp - 8 funções Sistema de 1 guia telescópica Plus Extension (Easy Slide) 5 alturas de cozinhado Bloqueio de segurança para crianças Porta com vidro triplo Aquecimento rápido Cavidade interior esmaltada Ventilação dinâmica Bandejas profunda esmaltada e grelha reforçada (com retenção de segurança)',
+        detalhes:'Sistema de limpeza DualClean: Auto limpeza pirolítica (3 níveis) + Teka Hydroclean® PRO automático Painel Touch Control com comandos pulsantes Multifunções SurroundTemp - 8 funções Sistema de 1 guia telescópica Plus Extension (Easy Slide) 5 alturas de cozinhado Bloqueio de segurança para crianças Porta com vidro triplo Aquecimento rápido Cavidade interior esmaltada Ventilação dinâmica Bandejas profunda esmaltada e grelha reforçada (com retenção de segurança)', nota:'* A MELHOR ESCOLHA' },
+      { ref:'95554459', nome:'Forno de encastrar multifunções 72 L 59X56X57 cm cinza AEG OU5AB21FSM', marca:'AEG', preco:383, url:'https://www.leroymerlin.pt/produtos/forno-de-encastrar-multifuncoes-72-l-59x56x57-cm-cinza-aeg-ou5ab21fsm-95554459.html',
+        caract:'Serie 5000 SurroundCook, 72L., 60 cm, Aqua Clean, 9 Prog, Display LED, Botões escamoteáveis Inox, calha 1 nivel, 2 vidros, A+, Inox Infinity e puxador Inox Infinity. O sistema de cozedura multinível, com o seu anel de aquecimento adicional, permite obter um aquecimento uniforme e consistente dos seus pratos com até três tabuleiros de forno totalmente cheios. Forno da série 5000 SurroundCook® faz circular o ar mais eficientemente para que os alimentos sejam cozinhados uniformemente em qualquer ponto do forno',
+        detalhes:'Serie 5000 SurroundCook, 72L., 60 cm, Aqua Clean, 9 Prog, Display LED, Botões escamoteáveis Inox, calha 1 nivel, 2 vidros, A+, Inox Infinity e puxador Inox Infinity. O sistema de cozedura multinível, com o seu anel de aquecimento adicional, permite obter um aquecimento uniforme e consistente dos seus pratos com até três tabuleiros de forno totalmente cheios. Forno da série 5000 SurroundCook® faz circular o ar mais eficientemente para que os alimentos sejam cozinhados uniformemente em qualquer ponto do forno', nota:'' },
     ],
   },
   {
     tipo: 'Exaustor', icon: '💨', cor: '#2A5A9A', essencial: true,
     artigos: [
-      { ref:'82051805', nome:'Exaustor Oculto 49×25cm 820m³/h inox CATA GH45X',                     marca:'CATA',  preco:170, url:'https://www.leroymerlin.pt/pesquisa/82051805',
-        caract:'820m³/h · Motor BT2 240W · 4 vel + turbo · LED · Touch · Filtros metálicos',
-        detalhes:'★ A Melhor Escolha. Exaustor embutido inox. Motor BT2 240W. 4 níveis + intenso. Potência máx. 790m³/h. Controlo touch. Temporizador desconexão automática. Filtros metálicos com indicador saturação. 49,2×28×25,3cm.' },
-      { ref:'82401306', nome:'Exaustor Oculto inox 54cm 660m³/h AEG DGE5661HM',                     marca:'AEG',   preco:330, url:'https://www.leroymerlin.pt/pesquisa/82401306',
-        caract:'660m³/h · 4 velocidades · LED · Filtragem eficaz · Design moderno',
-        detalhes:'Exaustor AEG oculto inox. Motor alta potência, fluxo até 700m³/h. 4 velocidades. Sistema filtragem LED. Fácil instalação e limpeza.' },
-      { ref:'89287950', nome:'Exaustor de Parede CATA VH 600 GBK preto',                            marca:'CATA',  preco:259, url:'https://www.leroymerlin.pt/pesquisa/89287950',
-        caract:'578m³/h · 65dB · Preto',
-        detalhes:'Caudal máximo em evacuação 578m³/h (norma EN-61591). Nível de som na velocidade máxima: 65dB.' },
-      { ref:'96393346', nome:'Exaustor de Parede 1027m³/h 90×54cm CATA BETA PRO 9000 X',            marca:'CATA',  preco:319, url:'https://www.leroymerlin.pt/pesquisa/96393346',
-        caract:'1027m³/h · Motor A1000 · LED · 3 vel + Turbo · Classe A · Filtros laváveis',
-        detalhes:'3 níveis extração + Turbo. Máx 1027m³/h, mín 419m³/h. 64-76dB(A). Motor A1000 extra silencioso. 380W. LED alta eficiência. Filtros laváveis MLL. Inox. Tubo descarga 150mm. Classe A.' },
-      { ref:'89287951', nome:'Exaustor de Parede CATA VH 900 GBK preto 650m³/h',                    marca:'CATA',  preco:289, url:'https://www.leroymerlin.pt/pesquisa/89287951',
-        caract:'650m³/h · Preto · 90cm',
-        detalhes:'Potência de sucção 650m³/h. Garante boa capacidade de extração de fumos e odores.' },
+      { ref:'82051805', nome:'Exaustor oculto 49,2x25,3x28 cm 820m3/h inox CATA GH45X', marca:'CATA', preco:170, url:'https://www.leroymerlin.pt/produtos/exaustor-oculto-49-2x25-3x28-cm-820m3-h-inox-cata-gh45x-82051805.html',
+        caract:'Exaustor convencional da marca Cata, embutido com luz LED em aço inoxidável, com motor BT2 de 240 W. Funciona com 4 níveis de extração e nível intenso, com potência máxima de 790 m³/h e controlo mecânico por meio de uma tela sensível ao toque, para fácil acesso à função desejada. Inclui temporizador de desconexão automática e filtros metálicos de gordura com indicador de saturação do filtro. O seu estilo clássico é ideal para cozinhas elegantes e funcionais. Medidas: 49,2 x 28 x 25,3 cm (largura x altura x profundidade).',
+        detalhes:'Exaustor convencional da marca Cata, embutido com luz LED em aço inoxidável, com motor BT2 de 240 W. Funciona com 4 níveis de extração e nível intenso, com potência máxima de 790 m³/h e controlo mecânico por meio de uma tela sensível ao toque, para fácil acesso à função desejada. Inclui temporizador de desconexão automática e filtros metálicos de gordura com indicador de saturação do filtro. O seu estilo clássico é ideal para cozinhas elegantes e funcionais. Medidas: 49,2 x 28 x 25,3 cm (largura x altura x profundidade).', nota:'* A MELHOR ESCOLHA' },
+      { ref:'82401306', nome:'Exaustor oculto inox 54 cm 660 m3/h AEG DGE5661HM', marca:'AEG', preco:330, url:'https://www.leroymerlin.pt/produtos/exaustor-oculto-inox-54-cm-660-m3-h-aeg-dge5661hm-82401306.html',
+        caract:'O Exaustor AEG DGE5661HM é ideal para quem procura um produto durável e eficiente. Possui um design moderno e elegante, na cor cinza que se adapta a qualquer decoração. O seu motor de alta potência garante um excelente desempenho, com um fluxo de ar de até 700 m/h. Além disso, possui 4 velocidades de funcionamento, para que possa escolher a que melhor se adapte às suas necessidades. O seu sistema de filtragem de ar é eficaz, para que possa manter a sua cozinha livre de odores e fumos. O seu sistema de iluminação LED permite que possa ver melhor o que está a cozinhar. Este exaustor é fácil de instalar e limpar, para que possa usufruir dele durante muito tempo.',
+        detalhes:'O Exaustor AEG DGE5661HM é ideal para quem procura um produto durável e eficiente. Possui um design moderno e elegante, na cor cinza que se adapta a qualquer decoração. O seu motor de alta potência garante um excelente desempenho, com um fluxo de ar de até 700 m/h. Além disso, possui 4 velocidades de funcionamento, para que possa escolher a que melhor se adapte às suas necessidades. O seu sistema de filtragem de ar é eficaz, para que possa manter a sua cozinha livre de odores e fumos. O seu sistema de iluminação LED permite que possa ver melhor o que está a cozinhar. Este exaustor é fácil de instalar e limpar, para que possa usufruir dele durante muito tempo.', nota:'' },
+      { ref:'89287950', nome:'Exaustor de parede Cata VH 600 GBK preto', marca:'CATA', preco:259, url:'https://www.leroymerlin.pt/produtos/exaustor-de-parede-cata-vh-600-gbk-preto-89287950.html',
+        caract:'Tem um caudal máximo em evacuação de 578 m³/h (norma EN-61591). O nível de som na velocidade máxima de evacuação é de 65 dB.',
+        detalhes:'Tem um caudal máximo em evacuação de 578 m³/h (norma EN-61591). O nível de som na velocidade máxima de evacuação é de 65 dB.', nota:'' },
+      { ref:'96393346', nome:'Exaustor de parede 1027 m³/h cinza 90x54x33 cm CATA BETA PRO 9000 X', marca:'CATA', preco:319, url:'https://www.leroymerlin.pt/produtos/exaustor-de-parede-1027-m3-h-cinza-90x54x33-cm-cata-beta-pro-9000-x-96393346.html',
+        caract:'3 niveis de extração, 2 + 1 TURBO, Capacidade de extração máxima - 1027m3/h, minima - 419 m3/h, Nivel sonoro 64dB(A), máximo: 76dB(A), Motor A1000 Extra silencioso, Consumo máximo de energia 380W, Iluminação de alta eficiência mediante LED, Sistema de fácil instalação, Filtros lavaveis na MLL, Acabamento em inox, tubo descarga 150 mm, Classe de eficiência energética A',
+        detalhes:'3 niveis de extração, 2 + 1 TURBO, Capacidade de extração máxima - 1027m3/h, minima - 419 m3/h, Nivel sonoro 64dB(A), máximo: 76dB(A), Motor A1000 Extra silencioso, Consumo máximo de energia 380W, Iluminação de alta eficiência mediante LED, Sistema de fácil instalação, Filtros lavaveis na MLL, Acabamento em inox, tubo descarga 150 mm, Classe de eficiência energética A', nota:'' },
+      { ref:'89287951', nome:'Exaustor de parede Cata VH 900 GBK preto 650 m3/h', marca:'CATA', preco:289, url:'https://www.leroymerlin.pt/produtos/exaustor-de-parede-cata-vh-900-gbk-preto-650-m3-h-89287951.html',
+        caract:'Potência de sucção: 650 m³/h, o que garante uma boa capacidade de extração de fumos e odores',
+        detalhes:'Potência de sucção: 650 m³/h, o que garante uma boa capacidade de extração de fumos e odores', nota:'' },
     ],
   },
   {
     tipo: 'Máquina Loiça', icon: '🍽', cor: '#3A7A44', essencial: true,
     artigos: [
-      { ref:'96188516', nome:'Máquina Lavar Louça Encastrar 13 conjuntos TEKA DFI 46720',           marca:'TEKA',  preco:399, url:'https://www.leroymerlin.pt/pesquisa/96188516',
-        caract:'13 conjuntos · SmartSensor · Meia carga · Aquastop · 6 programas',
-        detalhes:'Integração total. Touch Control com display digital LED. 13 conjuntos. 6 programas: Rápido, Normal, Eco, 1h, Intensivo. 4 temperaturas (45-60°C). Meia carga. Aquasafe + Aquastop. SmartSensor. Programação diferida 1-24h. Cesto superior ajustável.' },
-      { ref:'82908060', nome:'Máquina Lavar Louça Encastrar 12 conjuntos 60cm branco AEG FSB32610Z', marca:'AEG',   preco:589, url:'https://www.leroymerlin.pt/pesquisa/82908060',
-        caract:'12 conjuntos · Eficácia lavagem A · Eficácia secagem A · 10L/ciclo',
-        detalhes:'Eficácia de lavagem e secagem: ambas classificadas A. Consumo de água: 10 litros por ciclo (programa eco). 59,6×55×81,8cm, branco.' },
-      { ref:'86281430', nome:'Máquina Lavar Louça Encastre 60cm 14 talheres AEG FSK64907Z',         marca:'AEG',   preco:939, url:'https://www.leroymerlin.pt/pesquisa/86281430',
-        caract:'14 talheres · Alta capacidade',
-        detalhes:'Capacidade generosa para 14 talheres. Ideal para famílias maiores ou quem lava muita louça.' },
-      { ref:'91306627', nome:'Máquina Lavar Louça Encastrar 16 conjuntos 60cm Haier XI 6B0S3FSB',   marca:'HAIER', preco:699, url:'https://www.leroymerlin.pt/pesquisa/91306627',
-        caract:'16 conjuntos · Motor BLDC · WiFi + BT · 3º cesto · 40dBA · Abertura automática',
-        detalhes:'Display 6 dígitos. 10 programas. Motor BLDC. Início diferido 1-23h. Power Wash. Luz interior + no chão. Abertura automática da porta. 40dBA. Classe ruído B. App hOn. Cesto inferior rebatível. Cesto superior Easy-click. 3º cesto. Sensor sujidade. Aquastop. ★ Motor BLDC.' },
+      { ref:'96188516', nome:'Máquina de lavar louça de encastrar 13 conjuntos Teka DFI 46720', marca:'TEKA', preco:399, url:'https://www.leroymerlin.pt/produtos/maquina-de-lavar-louca-de-encastrar-13-conjuntos-teka-dfi-46720-96188516.html',
+        caract:'Máquina de lavar louça de integração total Painel de comandos eletrónico c/ display digital LED Capacidade para louça de 13 pessoas 6 programas de lavagem: Rápido, Normal, Eco, 1 hora, Intensivo 4 temperaturas de lavagem (45º/50º/55º/60ºC) Função meia carga Dispensador de detergente deslizante Sistema Aquasafe Sistema Aquastop Sistema de sensores SmartSensor Programação digital diferida (1-24H) Cesto superior regulável em altura Pilotos indicativos de funcionamento, falta de sal, abrilhantador e programa selecionado',
+        detalhes:'Máquina de lavar louça de integração total Painel de comandos eletrónico c/ display digital LED Capacidade para louça de 13 pessoas 6 programas de lavagem: Rápido, Normal, Eco, 1 hora, Intensivo 4 temperaturas de lavagem (45º/50º/55º/60ºC) Função meia carga Dispensador de detergente deslizante Sistema Aquasafe Sistema Aquastop Sistema de sensores SmartSensor Programação digital diferida (1-24H) Cesto superior regulável em altura Pilotos indicativos de funcionamento, falta de sal, abrilhantador e programa selecionado', nota:'' },
+      { ref:'82908060', nome:'Máquina de lavar louça de encastrar 12 conjuntos 59,6 x 55 x 81.8 cm branco AEG FSB32610Z', marca:'AEG', preco:589, url:'https://www.leroymerlin.pt/produtos/maquina-de-lavar-louca-de-encastrar-12-conjuntos-59-6-x-55-x-81-8-cm-branco-aeg-fsb32610z-82908060.html',
+        caract:'Eficácia de Lavagem e Secagem: Ambas classificadas como A, garantindo resultados excelentes. Consumo de Água: 10 litros por ciclo (com base no programa eco).',
+        detalhes:'Eficácia de Lavagem e Secagem: Ambas classificadas como A, garantindo resultados excelentes. Consumo de Água: 10 litros por ciclo (com base no programa eco).', nota:'' },
+      { ref:'86281430', nome:'Máquina de lavar louça encastre 60 cm 14 talheres AEG FSK64907Z', marca:'AEG', preco:939, url:'https://www.leroymerlin.pt/produtos/maquina-de-lavar-louca-encastre-60-cm-14-talheres-aeg-fsk64907z-86281430.html',
+        caract:'Tem uma capacidade generosa para 14 talheres, ideal para famílias maiores ou para quem lava muita louça.',
+        detalhes:'Tem uma capacidade generosa para 14 talheres, ideal para famílias maiores ou para quem lava muita louça.', nota:'' },
+      { ref:'91306627', nome:'Máquina de lavar louça de encastrar 16 conjuntos 59,7 x 55,5 x 81,8 cm branco Haier XI 6B0S3FSB', marca:'HAIER', preco:699, url:'https://www.leroymerlin.pt/produtos/maquina-de-lavar-louca-de-encastrar-16-conjuntos-59-7-x-55-5-x-81-8-cm-branco-haier-xi-6b0s3fsb-91306627.html',
+        caract:'Display Multifunções 6 Digit; 10 Programas; Motor BLDC; Inicio Diferido 1-23h, Power Wash, Luz no Chão, Luz interior, Abertura Automática Porta, 40dBA, Classe Ruído B, wifi + ble, App hOn, Cesto inferior totalmente rebatível, Cesto Superior Ajustável Easy-click, 3º Cesto, Sensor sujidade, indicador falta sal, Aquastop, dobradiças duplas.',
+        detalhes:'Display Multifunções 6 Digit; 10 Programas; Motor BLDC; Inicio Diferido 1-23h, Power Wash, Luz no Chão, Luz interior, Abertura Automática Porta, 40dBA, Classe Ruído B, wifi + ble, App hOn, Cesto inferior totalmente rebatível, Cesto Superior Ajustável Easy-click, 3º Cesto, Sensor sujidade, indicador falta sal, Aquastop, dobradiças duplas.', nota:'* Motor BLDC' },
     ],
   },
   {
     tipo: 'Microondas', icon: '📡', cor: '#6B4FC4', essencial: false,
     artigos: [
-      { ref:'91200482', nome:'Micro-ondas Encastrar 60cm Electrolux KMSD203MMX inox',               marca:'ELECTROLUX', preco:259, url:'https://www.leroymerlin.pt/pesquisa/91200482',
-        caract:'20L · 700W micro-ondas · 1000W grill · Controlos mecânicos · Placa 24,5cm',
-        detalhes:'20L. Grill 700W (grill 1000W). Controlos mecânicos. Semi-integrado. Placa 24,5cm. Aço inoxidável anti-dedadas.' },
-      { ref:'92921589', nome:'Micro-ondas Encastrar 20L 59×40cm preto Haier H38FMWID2S7',           marca:'HAIER', preco:339, url:'https://www.leroymerlin.pt/pesquisa/92921589',
-        caract:'20L · Touch open · Cavidade inox · Grill · Prato 315mm · Funções diretas',
-        detalhes:'20L. Touch open. Cavidade inox. Prato giratório 315mm. Grill ou combinação micro-ondas + grill. Funções diretas: batata, carne, peixe, pasta, pizza, bebidas, pipocas.' },
-      { ref:'17819781', nome:'Micro-ondas com Grill Encastre 60×33cm cinza CATA MC 20 IX',          marca:'CATA',  preco:219, url:'https://www.leroymerlin.pt/pesquisa/17819781',
-        caract:'Micro-ondas + Grill · Encastre · Cinza',
-        detalhes:'Micro-ondas com grill de encastre. 60×33×39cm. Cinza.' },
-      { ref:'94544983', nome:'Micro-ondas TEKA MSEG 620 BK SS',                                     marca:'TEKA',  preco:229, url:'https://www.leroymerlin.pt/pesquisa/94544983',
-        caract:'20L · 800W · 5 níveis · Grill 1000W · Prato 24,5cm · Integração total',
-        detalhes:'Integração total. Grill de resistência 1000W. 5 níveis de potência, 800W saída. 20 litros. Prato giratório Ø24,5mm. Temporizador 0-95 min. Descongelação por tempo. Interior inox.' },
+      { ref:'91200482', nome:'Micro-ondas de encastrar 60 cm Electrolux KMSD203MMX inox', marca:'ELETROLUX', preco:259, url:'https://www.leroymerlin.pt/produtos/micro-ondas-de-encastrar-60-cm-electrolux-kmsd203mmx-inox-91200482.html',
+        caract:'Micro-ondas com capacidade de 20 l, grelha de 700 W (grelha de 1000 W), controlos mecânicos, estrutura semi-integrada, placa de 24,5 cm, aço inoxidável anti dedadas',
+        detalhes:'Micro-ondas com capacidade de 20 l, grelha de 700 W (grelha de 1000 W), controlos mecânicos, estrutura semi-integrada, placa de 24,5 cm, aço inoxidável anti dedadas', nota:'' },
+      { ref:'92921589', nome:'Micro Ondas de encastrar 20 L 59,4 x 40,3 x 38,2 cm preto Haier H38FMWID2S7', marca:'HAIER', preco:339, url:'https://www.leroymerlin.pt/produtos/micro-ondas-de-encastrar-20-l-59-4-x-40-3-x-38-2-cm-preto-haier-h38fmwid2s7-92921589.html',
+        caract:'20L, Touch open, Cavidade Inox; Prato Giratório 315mm; Grill ou Combinação Microondas e Grill, Funções Diretas para batata, carne, peixe, pasta, pizza, bebibas, pipocas',
+        detalhes:'20L, Touch open, Cavidade Inox; Prato Giratório 315mm; Grill ou Combinação Microondas e Grill, Funções Diretas para batata, carne, peixe, pasta, pizza, bebibas, pipocas', nota:'' },
+      { ref:'17819781', nome:'Micro-ondas com grill de encastre cinza 60 x 33 x 39 cm Cata MC 20 IX', marca:'CATA', preco:219, url:'https://www.leroymerlin.pt/produtos/micro-ondas-com-grill-de-encastre-cinza-60-x-33-x-39-cm-cata-mc-20-ix-17819781.html',
+        caract:'',
+        detalhes:'', nota:'' },
+      { ref:'94544983', nome:'Micro-ondas MSEG 620 BK ss Teka', marca:'TEKA', preco:229, url:'https://www.leroymerlin.pt/produtos/micro-ondas-mseg-620-bk-ss-teka-94544983.html',
+        caract:'Micro-ondas TEKA de integração total Painel de comandos eletrónico Grill de resistência, 1,000 W 5 níveis de potência com 800W de saída de micro-ondas Capacidade: 20 litros Prato giratório integrado ø 24,5 mm Temporizador de duração de cozinhado 0-95 minutos Descongelação por tempo Interior inox',
+        detalhes:'Micro-ondas TEKA de integração total Painel de comandos eletrónico Grill de resistência, 1,000 W 5 níveis de potência com 800W de saída de micro-ondas Capacidade: 20 litros Prato giratório integrado ø 24,5 mm Temporizador de duração de cozinhado 0-95 minutos Descongelação por tempo Interior inox', nota:'' },
     ],
   },
   {
     tipo: 'Frigorífico', icon: '❄️', cor: '#2A7A9A', essencial: false,
     artigos: [
-      { ref:'91201602', nome:'Frigorífico Combinado Encastrar Low Frost 177cm Electrolux KND5FE18S', marca:'ELECTROLUX', preco:799, url:'https://www.leroymerlin.pt/pesquisa/91201602',
-        caract:'177cm · Low Frost · LED · 2 gavetas · Compressor inverter · Classe E',
-        detalhes:'Combinado de encastre Série 500 ColdSense. 177cm × 54,6cm. LED interior. 2 gavetas. Compressor inverter. Luzes LED. Instalação rápida. Classe E. Calhas deslizantes.' },
-      { ref:'97267020', nome:'Combinado Encastrar Haier HBQW5518E',                                 marca:'HAIER', preco:809, url:'https://www.leroymerlin.pt/pesquisa/97267020',
-        caract:'177cm · No Frost · LED · Classe E · 2 portas · 54×55cm',
-        detalhes:'Encastrável 2 portas. No Frost. Luz LED. Classe E. Branco. 540×550×1772mm.' },
+      { ref:'91201602', nome:'Frigorífico combinado de encastrar Low frost 177 cm Electrolux KND5FE18S', marca:'ELETROLUX', preco:799, url:'https://www.leroymerlin.pt/produtos/frigorifico-combinado-de-encastrar-low-frost-177-cm-electrolux-knd5fe18s-91201602.html',
+        caract:'Combinado de encastre da 500 Série ColdSense com 1,77mts x 54,6 cm, Indicadores LED no interior, 2 gaveta, compressor inverter, luzes LED, instalação rápida, classe E, instalação calhas deslizantes',
+        detalhes:'Combinado de encastre da 500 Série ColdSense com 1,77mts x 54,6 cm, Indicadores LED no interior, 2 gaveta, compressor inverter, luzes LED, instalação rápida, classe E, instalação calhas deslizantes', nota:'' },
+      { ref:'97267020', nome:'Comb enc haier HBQW5518E', marca:'HAIER', preco:809, url:'https://www.leroymerlin.pt/produtos/comb-enc-haier-hbqw5518e-97267020.html',
+        caract:'HBQW5518E Encastrável, 2 portas, No Frost, Luz Led, Classe E, Branco, L x P x A (mm) 540x550x1772',
+        detalhes:'HBQW5518E Encastrável, 2 portas, No Frost, Luz Led, Classe E, Branco, L x P x A (mm) 540x550x1772', nota:'' },
     ],
   },
   {
-    tipo: 'Máquina Roupa', icon: '👕', cor: '#7A3A9A', essencial: false,
+    tipo: 'Máquina Roupa', icon: '🫧', cor: '#2A6B7A', essencial: false,
     artigos: [
-      { ref:'97267322', nome:'Máquina Lavar Roupa Encastre Haier BHA6S69M6DB9J-S-A',               marca:'HAIER', preco:689, url:'https://www.leroymerlin.pt/pesquisa/97267322',
-        caract:'9kg · 1600 RPM · Classe A-30% · Vapor · 16 programas · Encastre',
-        detalhes:'Carregamento frontal. Encastre. 9kg. 1600 RPM. Classe A-30%. Branco. 16 programas com Vapor.' },
-    ],
-  },
-  {
-    tipo: 'Outros', icon: '🔌', cor: '#6B6B8A', essencial: false, _custom: true,
-    artigos: [
-      { ref:'', nome:'Máquina de café encastrar', marca:'', preco:0, caract:'', detalhes:'' },
-      { ref:'', nome:'Frigorífico de vinho encastrar', marca:'', preco:0, caract:'', detalhes:'' },
-      { ref:'', nome:'Arca congeladora encastrar', marca:'', preco:0, caract:'', detalhes:'' },
+      { ref:'97267322', nome:'MLR ENC HAIER BHA6S69M6DB9J-S- A', marca:'HAIER', preco:689, url:'https://www.leroymerlin.pt/produtos/mlr-enc-haier-bha6s69m6db9j-s-a-97267322.html',
+        caract:'Máquinas de lavar roupa de carregamento frontal, Encastre,, 9 kg, 1600 RPM, Class A-30%, Branco, 16 programas com Vapor',
+        detalhes:'Máquinas de lavar roupa de carregamento frontal, Encastre,, 9 kg, 1600 RPM, Class A-30%, Branco, 16 programas com Vapor', nota:'' },
     ],
   },
 ];
 
-
-export const ELETRO_ESSENCIAIS = ELETRO_DB.filter(t => t.essencial).map(t => t.tipo);
-
+export const ELETRO_ESSENCIAIS = ['Placa', 'Forno', 'Exaustor', 'Máquina Loiça'];
 // ════════════════════════════════════════════════
 // ESTADO
 // ════════════════════════════════════════════════
@@ -226,13 +216,25 @@ async function guardarOverride(ref, dados) {
       detalhes: dados.detalhes ?? a.detalhes,
     });
   });
-  const db = getDb(); if (!db) return;
-  try { await setDoc(doc(db, 'wk_eletros_overrides', ref), dados); } catch(e) { console.warn('eletros: guardar override', e); }
+  const db = getDb(); if (!db) { window.wkToast?.('⚠️ Firebase não disponível'); return; }
+  try {
+    await setDoc(doc(db, 'wk_eletros_overrides', ref), dados);
+  } catch(e) {
+    console.warn('eletros: guardar override', e);
+    const code = e?.code || '';
+    if (code === 'permission-denied') {
+      window.wkToast?.('🔒 Sem permissão — adiciona wk_eletros_overrides às Firestore Rules');
+    } else {
+      window.wkToast?.('⚠️ Erro ao guardar: ' + (code || e?.message || 'desconhecido'));
+    }
+  }
 }
 async function apagarOverrideDb(ref) {
   delete _overrides[ref];
   const db = getDb(); if (!db) return;
-  try { await deleteDoc(doc(db, 'wk_eletros_overrides', ref)); } catch(e) {}
+  try { await deleteDoc(doc(db, 'wk_eletros_overrides', ref)); } catch(e) {
+    window.wkToast?.('⚠️ Erro ao apagar override');
+  }
 }
 
 // ════════════════════════════════════════════════
