@@ -1146,29 +1146,37 @@ window.moRender = function() {
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,.25)'/%3E%3C/svg%3E");
     background-repeat:no-repeat;background-position:right 10px center;transition:border-color .15s;`;
 
+  // Só re-renderiza a barra de filtros se ainda não existir
+  if (!document.getElementById('mo-cat-select')) {
+    cats.innerHTML = `
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+        <select id="mo-cat-select" onchange="window.moSelectCat(this.value)"
+          style="${ddStyle}min-width:200px">
+          ${MO_DADOS.map(c=>`<option value="${c.cat}" ${ST.moCat===c.cat?'selected':''}>${c.icon} ${c.cat} (${c.servicos.length})</option>`).join('')}
+        </select>
+        <div class="search-wrap" style="flex:1;min-width:180px;position:relative">
+          <span class="search-icon">⌕</span>
+          <input type="text" id="mo-pesquisa-input" class="search-input"
+            placeholder="Pesquisar serviço ou código LM…"
+            oninput="window.moPesquisar(this.value)"
+            style="padding-right:28px">
+          <button onclick="window.moClearPesquisa()"
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;
+            color:var(--t4);font-size:15px;cursor:pointer;padding:2px 4px">×</button>
+        </div>
+      </div>`;
+  } else {
+    // Actualizar só o valor do select sem recriar o input
+    const sel = document.getElementById('mo-cat-select');
+    if (sel) sel.value = ST.moCat;
+  }
+
+  moRenderLista();
+};
+
+function moRenderLista() {
+  const lista = document.getElementById('mo-lista'); if (!lista) return;
   const pesq = (ST.moPesquisa || '').toLowerCase().trim();
-
-  // Linha de filtros: Categoria · Pesquisa
-  cats.innerHTML = `
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
-      <select id="mo-cat-select" onchange="window.moSelectCat(this.value)"
-        style="${ddStyle}min-width:200px;border-color:${ST.moCat?'rgba(196,97,42,.35)':'rgba(255,255,255,.1)'}">
-        ${MO_DADOS.map(c=>`<option value="${c.cat}" ${ST.moCat===c.cat?'selected':''}>${c.icon} ${c.cat} (${c.servicos.length})</option>`).join('')}
-      </select>
-      <div class="search-wrap" style="flex:1;min-width:180px;position:relative">
-        <span class="search-icon">⌕</span>
-        <input type="text" id="mo-pesquisa-input" class="search-input"
-          placeholder="Pesquisar serviço ou código LM…"
-          value="${ST.moPesquisa||''}"
-          oninput="window.moPesquisar(this.value)"
-          style="padding-right:28px">
-        <button onclick="window.moClearPesquisa()"
-          style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;
-          color:${pesq?'var(--t2)':'var(--t4)'};font-size:15px;cursor:pointer;padding:2px 4px">×</button>
-      </div>
-    </div>`;
-
-  // Serviços a mostrar
   let servicos;
   if (pesq) {
     servicos = [];
@@ -1245,20 +1253,22 @@ window.moRender = function() {
 
 window.moPesquisar = function(v) {
   ST.moPesquisa = v;
-  moRender();
+  moRenderLista();
 };
 
 window.moClearPesquisa = function() {
   ST.moPesquisa = '';
   const inp = document.getElementById('mo-pesquisa-input');
-  if (inp) inp.value = '';
-  moRender();
+  if (inp) { inp.value = ''; inp.focus(); }
+  moRenderLista();
 };
 
 window.moSelectCat = function(cat) {
   ST.moCat = cat;
   ST.moPesquisa = '';
-  moRender();
+  const inp = document.getElementById('mo-pesquisa-input');
+  if (inp) inp.value = '';
+  moRenderLista();
 };
 
 window.moToggleDetalhe = function(cod) {
@@ -1285,7 +1295,7 @@ window.moToggleOrc = function(cod) {
     MO_DADOS.forEach(c => { const s = c.servicos.find(x => x.cod === cod); if (s) servico = { ...s, _cat: c.cat, _cor: c.cor, qty: 1, nota: '' }; });
     if (servico) { ST.moOrc.push(servico); toast('✓ Adicionado ao orçamento'); }
   }
-  moRender();
+  moRenderLista();
   moRenderPainel();
   const badge = document.getElementById('badge-mo');
   if (badge) { badge.textContent = ST.moOrc.length; badge.style.display = ST.moOrc.length ? 'inline-block' : 'none'; }
@@ -1421,7 +1431,7 @@ window.moLimpar = function() {
   if (!ST.moOrc.length) return;
   if (confirm('Limpar todo o orçamento de mão de obra?')) {
     ST.moOrc = [];
-    moRender();
+    moRenderLista();
     moRenderPainel();
     const badge = document.getElementById('badge-mo');
     if (badge) { badge.textContent = '0'; badge.style.display = 'none'; }
