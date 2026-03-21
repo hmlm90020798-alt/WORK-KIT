@@ -441,10 +441,11 @@ function renderCatalogo() {
           oninput="window.tampoPesquisar(this.value)"
           onkeydown="if(event.key==='Escape'){window.tampoClearPesquisa();this.blur()}"
           style="padding-right:30px">
-        ${TS.pesquisa ? `
-          <button onclick="window.tampoClearPesquisa()"
-            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);font-size:14px;cursor:pointer;line-height:1;padding:2px 4px;border-radius:4px">×</button>
-        ` : ''}
+        <button onclick="window.tampoClearPesquisa()"
+          style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;
+          color:${TS.pesquisa ? 'var(--t2)' : 'var(--t4)'};font-size:15px;cursor:pointer;line-height:1;
+          padding:2px 5px;border-radius:4px;transition:color .15s"
+          title="Limpar pesquisa">×</button>
       </div>
       ${grupos.length ? `
         <div style="display:flex;gap:4px;flex-wrap:wrap">
@@ -1132,15 +1133,11 @@ function renderResumoCalc() {
           </div>
         ` : ''}
 
-        <!-- Limpar -->
+        <!-- Comparar -->
         ${artigo ? `
           <button onclick="window.calcParaComparador()"
-            style="width:100%;padding:8px;border-radius:7px;background:rgba(42,107,122,.1);border:1px solid rgba(42,107,122,.25);color:rgba(150,220,230,.7);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;margin-bottom:6px">
+            style="width:100%;padding:8px;border-radius:7px;background:rgba(42,107,122,.1);border:1px solid rgba(42,107,122,.25);color:rgba(150,220,230,.7);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s">
             ⚖️ Comparar com outro tampo →
-          </button>
-          <button onclick="window.calcLimpar()"
-            style="width:100%;padding:7px;border-radius:7px;background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--t4);font-size:11px;cursor:pointer;transition:all .15s">
-            ↺ Limpar cálculo
           </button>` : ''}
       </div>
     </div>`;
