@@ -106,6 +106,15 @@ export const MATERIAIS_DB = [
   { ref:'17729306', familia:'WC / Sanitários', nome:'Móvel Cesto CH Zeus/Play 40×32×180 Branco', preco:149.0, unid:'un', quando:'Coluna WC 40cm com cesto aberto — toalhas e produtos.', lista:'Remodelação WC', url:'' },
   { ref:'86510135', familia:'WC / Sanitários', nome:'Móvel CH Luca 80×45×84 2G/1P Branco', preco:319.0, unid:'un', quando:'Móvel lavatório 80cm 2 gavetas — principal do WC.', lista:'Remodelação WC', url:'' },
   { ref:'91329343', familia:'Lava-Louça e Torneiras', nome:'Lava-Louça 1C 51×44×20cm Loft Inox', preco:91.99, unid:'un', quando:'Lava-louça inox 1 cuba encastrar em tampo — rebaixo ou à face.', lista:'Instalação Cozinha', url:'' },
+  { ref:'16353603', familia:'Ferragens e Acessórios', nome:'Régua 600mm p/Forno 560', preco:9.89, unid:'un', quando:'Régua de nivelamento para módulo de forno 560mm — usar quando o módulo inferior não tem profundidade standard.', lista:'Instalação Cozinha', url:'' },
+  { ref:'81934117', familia:'Ferragens e Acessórios', nome:'Régua Ref Móv 800 Forno 760mm', preco:13.99, unid:'un', quando:'Régua de referência para módulo de forno 760mm — garante nivelamento correcto do forno na coluna.', lista:'Instalação Cozinha', url:'' },
+  { ref:'19276894', familia:'Vedação e Selagem', nome:'Adesivo Dumafix 290ml Dumawall', preco:10.99, unid:'un', quando:'Colagem de painéis Dumawall/Dumaplast em paredes — usar em vez de silicone para painéis PVC de revestimento.', lista:'Instalação Cozinha', url:'' },
+  { ref:'86904474', familia:'Ferramentas e Consumíveis', nome:'Fita Pintor Multisup Dexter 50m×48mm', preco:2.49, unid:'un', quando:'Protecção de superfícies durante instalação — mascarar tampos, eletros e paredes antes de silicone ou pintura.', lista:'Instalação Cozinha', url:'' },
+  { ref:'84299215', familia:'Fixação e Estrutura', nome:'Tubo Flexível Alumínio D120 C35 a 200cm', preco:7.39, unid:'un', quando:'Ligação do exaustor à saída de ar — tubo extensível até 200cm para alcançar a chaminé.', lista:'Instalação Cozinha', url:'' },
+  { ref:'81995522', familia:'Ferragens e Acessórios', nome:'Rolo Protecção Gaveta/Móv Cinza 150×50 Delinia', preco:4.29, unid:'rolo', quando:'Forro de gavetas e prateleiras de cozinha — protecção e acabamento interior dos módulos.', lista:'Instalação Cozinha', url:'' },
+  { ref:'82151451', familia:'Fixação e Estrutura', nome:'Esquadro Angular 40×40mm Zincado', preco:0.49, unid:'un', quando:'Reforço de junções entre módulos de cozinha — mais robusto que os esquadros 30×30mm para módulos pesados.', lista:'Instalação Cozinha', url:'' },
+  { ref:'91779055', familia:'Lava-Louça e Torneiras', nome:'Sifão Plástico EQT 1/2 1/4 Extens 32/40', preco:6.09, unid:'un', quando:'Sifão de lava-louça extensível — usar quando a saída de esgotos é mais afastada que o standard.', lista:'Instalação Cozinha', url:'' },
+  { ref:'91779105', familia:'Lava-Louça e Torneiras', nome:'Tubo Extensível 1.1/2 40-50mm Branco KC', preco:1.69, unid:'un', quando:'Extensão de sifão 40-50mm — para ajustar a distância entre sifão e saída de esgoto na parede.', lista:'Instalação Cozinha', url:'' },
   { ref:'87210143', familia:'Carpintaria e Caixilharia', nome:'Porta Blindada Lisa 80×200cm Inox Esq', preco:399.0, unid:'un', quando:'Porta blindada 80cm abertura esquerda — substituição porta entrada.', lista:'Remodelação Geral', url:'' },
 ];
 
@@ -261,21 +270,32 @@ function renderMatChips() {
   const total    = MATERIAIS_DB.length;
   const filtrado = artigos_filtrados().length;
 
-  chips.innerHTML = familias.map(f => {
-    const fi   = f === 'todas' ? { icon:'🗂', cor:'#C4612A', bg:'rgba(196,97,42,.12)' } : fam_info(f);
-    const ativo = MS.familiaFiltro === f;
-    const n    = f === 'todas' ? total : MATERIAIS_DB.filter(a => a.familia === f).length;
-    return `
-      <button onclick="window.matFiltrarFamilia('${f.replace(/'/g, "\'")}')"
-        style="padding:5px 12px;border-radius:20px;font-family:var(--sans);font-size:11px;
-        font-weight:${ativo ? '700' : '500'};cursor:pointer;transition:all .15s;white-space:nowrap;margin:0 4px 6px 0;
-        background:${ativo ? fi.bg.replace('.12','.25') : fi.bg};
-        border:1px solid ${ativo ? fi.cor+'55' : fi.cor+'22'};
-        color:${ativo ? fi.cor : 'var(--t3)'}">
-        ${f === 'todas' ? '🗂 Todas' : fi.icon+' '+f}
-        <span style="opacity:.6;margin-left:3px">${n}</span>
-      </button>`;
-  }).join('');
+  // Dropdown de família + contador de resultados
+  const fi_sel = MS.familiaFiltro === 'todas'
+    ? { icon:'🗂', cor:'#C4612A' }
+    : fam_info(MS.familiaFiltro);
+
+  chips.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+      <div style="position:relative;flex:1;min-width:200px;max-width:320px">
+        <select id="mat-familia-sel"
+          onchange="window.matFiltrarFamilia(this.value)"
+          style="width:100%;padding:8px 32px 8px 12px;border-radius:9px;
+            background:rgba(255,255,255,.05);border:1px solid rgba(196,97,42,.3);
+            color:var(--t2);font-family:var(--sans);font-size:12px;font-weight:600;
+            cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;
+            background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,.3)'/%3E%3C/svg%3E\");
+            background-repeat:no-repeat;background-position:right 10px center">
+          ${familias.map(f => {
+            const n = f === 'todas' ? total : MATERIAIS_DB.filter(a => a.familia === f).length;
+            const fi2 = f === 'todas' ? { icon:'🗂' } : fam_info(f);
+            return `<option value="${f}" ${MS.familiaFiltro === f ? 'selected' : ''}>
+              ${fi2.icon} ${f === 'todas' ? 'Todas as famílias' : f} (${n})
+            </option>`;
+          }).join('')}
+        </select>
+      </div>
+    </div>`;
 
   if (info) info.textContent = filtrado + ' artigo' + (filtrado !== 1 ? 's' : '') +
     (MS.pesquisa || MS.familiaFiltro !== 'todas' ? ' encontrado' + (filtrado !== 1 ? 's' : '') : '');
