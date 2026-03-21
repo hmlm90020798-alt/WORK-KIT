@@ -243,6 +243,8 @@ let TS = {
   pesquisa:      '',
   pvpMin:        null,
   pvpMax:        null,
+  vistaGlobal:   false,   // todos os materiais numa vista
+  ordenacao:     'nome',  // 'nome' | 'pvp_asc' | 'pvp_desc'
   // Calculadora
   calc: {
     material:    'Silestone',
@@ -403,7 +405,7 @@ function renderCatalogo() {
 
   ct.innerHTML = `
     <!-- Filtro de material -->
-    <div class="filter-chips" style="margin-bottom:12px">
+    <div class="filter-chips" style="margin-bottom:12px;${TS.vistaGlobal ? 'opacity:.4;pointer-events:none' : ''}">
       ${materiais.map(m => `
         <button class="chip ${TS.material === m ? 'active' : ''}"
                 onclick="window.tampoSelectMaterial('${m}')">
@@ -433,20 +435,24 @@ function renderCatalogo() {
             <button class="chip ${TS.grupoFiltro === g ? 'active' : ''}"
                     onclick="window.tampoFiltroGrupo('${g}')">${g}</button>`).join('')}
         </div>` : ''}
-      <!-- Filtro de preço -->
+      <!-- Ordenação + Vista Global -->
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-        <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">PVP/m²:</span>
+        <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">Ordenar:</span>
         ${[
-          { label:'Todos', min:null, max:null },
-          { label:'até 400€', min:null, max:400 },
-          { label:'400–600€', min:400, max:600 },
-          { label:'600–800€', min:600, max:800 },
-          { label:'> 800€',   min:800, max:null },
-        ].map(f => `
-          <button class="chip ${TS.pvpMin===f.min && TS.pvpMax===f.max ? 'active' : ''}"
-            onclick="window.tampoPvpFiltro(${f.min},${f.max})">
-            ${f.label}
+          { label:'A → Z',          val:'nome'     },
+          { label:'Preço ↑',        val:'pvp_asc'  },
+          { label:'Preço ↓',        val:'pvp_desc' },
+        ].map(o => `
+          <button class="chip ${TS.ordenacao === o.val ? 'active' : ''}"
+            onclick="window.tampoOrdenar('${o.val}')">
+            ${o.label}
           </button>`).join('')}
+        <div style="width:1px;height:16px;background:rgba(255,255,255,.1);margin:0 4px"></div>
+        <button class="chip ${TS.vistaGlobal ? 'active' : ''}"
+          onclick="window.tampoToggleGlobal()"
+          title="Ver todos os materiais ordenados por preço">
+          🌐 Todos os materiais
+        </button>
       </div>
     </div>
 
@@ -465,24 +471,94 @@ function renderCatalogo() {
   renderCatalogGrid();
 }
 
-function renderCatalogGrid() {
-  const mat   = TAMPOS_DB[TS.material];
-  const pesq  = TS.pesquisa.toLowerCase().trim();
-  const esp0 = mat.espessuras[0];
-  const artigos = mat.artigos.filter(a => {
-    const matchGrupo = !TS.grupoFiltro || a.grupo === TS.grupoFiltro;
-    const matchPesq  = !pesq || a.nome.toLowerCase().includes(pesq);
-    const pvp = a.pvp?.[esp0] || 0;
-    const matchMin   = TS.pvpMin === null || pvp >= TS.pvpMin;
-    const matchMax   = TS.pvpMax === null || pvp <= TS.pvpMax;
-    return matchGrupo && matchPesq && matchMin && matchMax && !a.consulta;
+function ordenarArtigos(lista, pvpFn, nomeFn) {
+  return [...lista].sort((a, b) => {
+    if (TS.ordenacao === 'pvp_asc')  return (pvpFn(a) || 9999) - (pvpFn(b) || 9999);
+    if (TS.ordenacao === 'pvp_desc') return (pvpFn(b) || 0)    - (pvpFn(a) || 0);
+    return nomeFn(a).localeCompare(nomeFn(b), 'pt');
   });
+}
 
-  const info = document.getElementById('tampo-info-bar');
-  if (info) info.textContent = artigos.length + ' artigo' + (artigos.length !== 1 ? 's' : '') + ' · ' + TS.material;
+function labelOrdenacao() {
+  return { nome: 'A→Z', pvp_asc: 'preço ↑', pvp_desc: 'preço ↓' }[TS.ordenacao] || '';
+}
 
+function renderCatalogGrid() {
+  const pesq = TS.pesquisa.toLowerCase().trim();
   const grid = document.getElementById('tampo-grid-cards');
-  if (grid) grid.innerHTML = artigos.map(a => renderCardTampo(a, mat)).join('');
+  const info = document.getElementById('tampo-info-bar');
+  if (!grid) return;
+
+  if (TS.vistaGlobal) {
+    // Vista global — todos os materiais juntos ordenados
+    let todos = [];
+    Object.entries(TAMPOS_DB).forEach(([matNome, matData]) => {
+      const esp0 = matData.espessuras[0];
+      matData.artigos
+        .filter(a => !a.consulta && (!pesq || a.nome.toLowerCase().includes(pesq)))
+        .forEach(a => todos.push({ ...a, _mat: matNome, _matData: matData, _esp: esp0 }));
+    });
+    todos = ordenarArtigos(todos, a => a.pvp?.[a._esp] || 0, a => a.nome);
+    if (info) info.textContent = todos.length + ' artigos · todos os materiais · ' + labelOrdenacao();
+    grid.innerHTML = todos.map(a => renderCardTampoGlobal(a)).join('');
+  } else {
+    // Vista por material
+    const mat  = TAMPOS_DB[TS.material];
+    const esp0 = mat.espessuras[0];
+    let artigos = mat.artigos.filter(a => {
+      const matchGrupo = !TS.grupoFiltro || a.grupo === TS.grupoFiltro;
+      const matchPesq  = !pesq || a.nome.toLowerCase().includes(pesq);
+      return matchGrupo && matchPesq && !a.consulta;
+    });
+    artigos = ordenarArtigos(artigos, a => a.pvp?.[esp0] || 0, a => a.nome);
+    if (info) info.textContent = artigos.length + ' artigos · ' + TS.material + ' · ' + labelOrdenacao();
+    grid.innerHTML = artigos.map(a => renderCardTampo(a, mat)).join('');
+  }
+}
+
+function renderCardTampoGlobal(a) {
+  const esp     = a._esp;
+  const c1      = a.c1?.[esp];
+  const pvp     = a.pvp?.[esp];
+  const matNome = a._mat;
+  const mat     = a._matData;
+  return `
+    <div class="tampo-card" style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:99px;
+          background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:var(--t3)">
+          ${matNome}${a.grupo ? ' · ' + a.grupo : ''}
+        </span>
+        ${mat.espessuras.length > 1 ? `<span style="font-size:9px;color:var(--t4)">${esp}</span>` : ''}
+      </div>
+      <div style="font-size:14px;font-weight:600;color:var(--t1);line-height:1.2">${a.nome}</div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+        <button onclick="window.copiar('${c1}',this)"
+          data-c1btn data-val="${c1}"
+          style="display:flex;flex-direction:column;align-items:flex-start;background:rgba(196,97,42,.08);border:1px solid rgba(196,97,42,.2);border-radius:7px;padding:5px 9px;cursor:pointer;transition:all .15s;min-width:0"
+          title="Clica para copiar C1">
+          <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(196,97,42,.6)">C1 ⎘</span>
+          <span data-c1val style="font-family:var(--mono);font-size:13px;font-weight:700;color:rgba(255,190,152,.8)">${fmtC1(c1)}</span>
+        </button>
+        <div style="text-align:right">
+          <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">PVP / m²</div>
+          <div data-pvpval style="font-family:var(--mono);font-size:15px;font-weight:600;color:var(--t1)">${fmtPVP(pvp)}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;margin-top:2px">
+        <button onclick="window.tampoAbrirCalc('${a.nome}','${matNome}')"
+          style="flex:1;padding:6px 8px;border-radius:7px;background:rgba(196,97,42,.1);border:1px solid rgba(196,97,42,.2);color:rgba(255,190,152,.7);font-size:10px;font-weight:700;cursor:pointer">
+          🧮 Calcular
+        </button>
+        <button onclick="window.tampoAbrirComp('${a.nome}','${matNome}')"
+          style="flex:1;padding:6px 8px;border-radius:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--t3);font-size:10px;font-weight:700;cursor:pointer">
+          ⚖️ Comparar
+        </button>
+        <button onclick="window.tampoEditar('${a.nome}','${matNome}')"
+          style="padding:6px 9px;border-radius:7px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--t4);font-size:10px;cursor:pointer"
+          title="Editar">✏️</button>
+      </div>
+    </div>`;
 }
 
 function renderCardTampo(a, mat) {
@@ -546,10 +622,19 @@ function renderCardTampo(a, mat) {
     </div>`;
 }
 
-window.tampoSelectMaterial = function(m) { TS.material = m; TS.grupoFiltro = ''; TS.pesquisa = ''; TS.pvpMin = null; TS.pvpMax = null; renderCatalogo(); };
-window.tampoFiltroGrupo    = function(g) { TS.grupoFiltro = g; renderCatalogGrid(); };
-window.tampoPesquisar      = function(v) { TS.pesquisa = v; renderCatalogGrid(); };
-window.tampoPvpFiltro      = function(min, max) { TS.pvpMin = min; TS.pvpMax = max; renderCatalogo(); };
+window.tampoSelectMaterial = function(m) {
+  TS.material = m; TS.grupoFiltro = ''; TS.pesquisa = '';
+  TS.pvpMin = null; TS.pvpMax = null; TS.vistaGlobal = false;
+  renderCatalogo();
+};
+window.tampoFiltroGrupo   = function(g) { TS.grupoFiltro = g; renderCatalogGrid(); };
+window.tampoPesquisar     = function(v) { TS.pesquisa = v; renderCatalogGrid(); };
+window.tampoOrdenar       = function(ord) { TS.ordenacao = ord; renderCatalogo(); };
+window.tampoToggleGlobal  = function() {
+  TS.vistaGlobal = !TS.vistaGlobal;
+  TS.grupoFiltro = '';
+  renderCatalogo();
+};
 window.tampoClearPesquisa  = function() {
   TS.pesquisa = '';
   const inp = document.getElementById('tampo-pesquisa-input');
