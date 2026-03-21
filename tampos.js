@@ -1281,8 +1281,7 @@ function updateResumoCalc() {
   const pvpDesc2  = (pvpTampo + pvpRev + pvpAcb + (transp ? transp.pvp : 0)) * (descPct2 / 100);
   const pvpFinal  = pvpTampo + pvpRev + pvpAcb + (transp ? transp.pvp : 0) - pvpDesc2;
 
-  // Actualizar total PVP
-  const totalEl = document.getElementById('resumo-pvp-total');
+  // Actualizar total PVP — reutilizar totalEl já declarado acima
   if (totalEl) totalEl.textContent = fmtPVP(pvpFinal);
 
   // Actualizar linha desconto
