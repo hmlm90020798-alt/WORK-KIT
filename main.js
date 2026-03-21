@@ -8,6 +8,7 @@
 import { tampoInit, switchTampoTab, TAMPOS_DB, ANIGRACO, TRANSPORTE } from './tampos.js';
 import { eletroInit, switchEletroTab, ELETRO_DB, ELETRO_ESSENCIAIS  } from './eletros.js';
 import { moRender, moCarregarOrcamento, MO_SECCOES, MO_SECCAO_ORDEM  } from './maoobra.js';
+import { matInit, matCarregar }                                         from './materiais.js';
 import { initializeApp }                                 from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, doc, setDoc, getDoc, getDocs,
          collection, deleteDoc }                         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -331,8 +332,9 @@ window.switchTab = function(tabId, btnEl) {
     if (!document.getElementById('eletro-header')?.innerHTML) eletroInit();
     else switchEletroTab('catalogo');
   }
-  if (tabId === 'maoobra')  moRender();
-  if (tabId === 'cliente')  cliRender();
+  if (tabId === 'maoobra')    moRender();
+  if (tabId === 'materiais')  matInit();
+  if (tabId === 'cliente')    cliRender();
 };
 
 // ════════════════════════════════════════════════
@@ -1066,6 +1068,7 @@ window.cliApagarHistorico = function() {
         chkCarregar(),
         cliCarregarHist(),
         moCarregarOrcamento(),
+        matCarregar(),
       ]);
       setView('app');
       document.querySelector('[data-tab="assistente"]')?.classList.add('active');

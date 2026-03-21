@@ -60,6 +60,9 @@
       <button class="nav-tab" data-tab="maoobra" onclick="window.switchTab('maoobra',this)">
         🔨 Mão de Obra
       </button>
+      <button class="nav-tab" data-tab="materiais" onclick="window.switchTab('materiais',this)">
+        📦 Materiais
+      </button>
       <button class="nav-tab" data-tab="cliente" onclick="window.switchTab('cliente',this)">
         🧭 Cliente
       </button>
@@ -226,6 +229,12 @@
       </div>
     </div>
 
+    <!-- ── TAB: MATERIAIS ── -->
+    <div class="tab-content" id="tab-materiais">
+      <div id="mat-header"></div>
+      <div id="mat-grid"></div>
+    </div>
+
     <!-- ── TAB: QUALIFICAÇÃO CLIENTE ── -->
     <div class="tab-content" id="tab-cliente">
       <div class="page-header page-header-flex">
@@ -308,17 +317,6 @@
     <div class="modal-footer">
       <button class="btn-cancelar" onclick="window.bibFecharModal()">Cancelar</button>
       <button class="btn-guardar" onclick="window.bibGuardar()">Guardar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ MODAL CONFIRM ══ -->
-<div id="modal-confirm">
-  <div class="confirm-box">
-    <div class="confirm-box-msg" id="modal-confirm-msg"></div>
-    <div class="confirm-box-btns">
-      <button class="confirm-btn-cancel" id="modal-confirm-cancel">Cancelar</button>
-      <button class="confirm-btn-ok" id="modal-confirm-ok">Confirmar</button>
     </div>
   </div>
 </div>

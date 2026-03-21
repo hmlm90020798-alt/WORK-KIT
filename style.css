@@ -575,3 +575,33 @@ input[type=number] { -moz-appearance: textfield; }
   background: rgba(196,97,42,.08);
   box-shadow: 0 0 0 1px rgba(196,97,42,.3);
 }
+
+/* ════════════════════════════════════
+   TAB MATERIAIS
+════════════════════════════════════ */
+.mat-grid-inner {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.mat-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-brd);
+  border-radius: 14px;
+  padding: 14px;
+  transition: border-color .2s, box-shadow .2s;
+  display: flex;
+  flex-direction: column;
+}
+.mat-card:hover {
+  border-color: var(--glass-brd2);
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+}
+.mat-card-aberto {
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+}
+
+@media (max-width: 600px) {
+  .mat-grid-inner { grid-template-columns: 1fr; }
+}
