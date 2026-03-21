@@ -824,7 +824,6 @@ function renderOrcamento() {
       `
     }`;
 }
-}
 
 // ════════════════════════════════════════════════
 // AÇÕES — FILTROS / PESQUISA
