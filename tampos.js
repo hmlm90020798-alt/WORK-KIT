@@ -434,6 +434,7 @@ function renderCatalogo() {
           placeholder="Pesquisar cor ou referência…"
           value="${TS.pesquisa}"
           oninput="window.tampoPesquisar(this.value)"
+          onkeydown="if(event.key==='Escape'){window.tampoClearPesquisa();this.blur()}"
           style="padding-right:30px">
         ${TS.pesquisa ? `
           <button onclick="window.tampoClearPesquisa()"
@@ -1251,6 +1252,7 @@ window.calcLimpar = function() {
   TS.calc.transporte   = null;
   TS.calc.desconto     = 10;
   renderCalculadora();
+  window.wkToast('Calculadora limpa');
 };
 
 function updateResumoCalc() {
@@ -1318,8 +1320,9 @@ function renderComparador() {
   ct.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:14px">
 
-      <!-- Botão modo apresentação -->
-      <div style="display:flex;justify-content:flex-end">
+      <!-- Botões comparador -->
+      <div style="display:flex;justify-content:flex-end;gap:8px">
+        <button onclick="window.compLimparTudo()" style="padding:7px 14px;border-radius:8px;background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.2);color:#ffb3a0;font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer">↺ Limpar tudo</button>
         <button onclick="window.tampoModoApresentacao()"
           style="display:flex;align-items:center;gap:7px;padding:8px 16px;border-radius:8px;background:rgba(42,107,122,.12);border:1px solid rgba(42,107,122,.3);color:rgba(150,220,230,.75);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s"
           title="Abrir vista limpa para mostrar ao cliente">
@@ -1611,6 +1614,18 @@ window.calcParaComparador = function() {
 window.compLimparLado = function(l) {
   TS.comp.lado[l].artigo = null;
   renderComparador();
+};
+
+// Limpar comparador completo
+window.compLimparTudo = function() {
+  TS.comp.lado.A.artigo = null;
+  TS.comp.lado.B.artigo = null;
+  TS.comp.pecas         = [{ id: gerarIdPeca(), comp: '', larg: '0.65' }];
+  TS.comp.revestimento  = [];
+  TS.comp.acabamentos   = {};
+  TS.comp.transporte    = null;
+  renderComparador();
+  window.wkToast('Comparador limpo');
 };
 
 
