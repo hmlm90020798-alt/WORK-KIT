@@ -252,6 +252,7 @@ let TS = {
     artigo:      null,          // artigo seleccionado
     espessura:   '2cm',
     espRev:      '1.2cm',       // espessura do revestimento
+    desconto:    10,            // % desconto (default 10%)
     pecas:       [],            // [{id, comp, larg}]
     revestimento:[],            // [{id, comp, larg}]
     acabamentos: {},            // {rodatampo: 0, cortebruto: 0, ...}
@@ -1024,9 +1025,12 @@ function renderResumoCalc() {
     }
   });
 
-  const transp = TS.calc.transporte !== null ? TRANSPORTE[TS.calc.transporte] : null;
+  const transp    = TS.calc.transporte !== null ? TRANSPORTE[TS.calc.transporte] : null;
   const pvpTransp = transp ? transp.pvp : 0;
-  const pvpTotal  = pvpTampo + pvpRev + pvpAcb + pvpTransp;
+  const pvpBruto  = pvpTampo + pvpRev + pvpAcb + pvpTransp;
+  const descPct   = parseNum(TS.calc.desconto) || 0;
+  const pvpDesc   = pvpBruto * (descPct / 100);
+  const pvpTotal  = pvpBruto - pvpDesc;
 
   return `
     <div id="calc-resumo-wrap" style="position:sticky;top:74px">
@@ -1093,10 +1097,28 @@ function renderResumoCalc() {
               </div>` : ''}
           </div>
 
+          <!-- Desconto -->
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:9px">
+            <span style="flex:1;font-size:11px;color:var(--t3)">Desconto</span>
+            <div style="display:flex;align-items:center;gap:4px">
+              <input type="number" id="resumo-desconto" min="0" max="100" step="0.5"
+                value="${descPct}"
+                oninput="window.calcDescontoUpdate(this.value)"
+                style="width:52px;padding:4px 8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;font-family:var(--mono);font-size:12px;color:var(--t1);text-align:center;outline:none">
+              <span style="font-size:11px;color:var(--t4)">%</span>
+            </div>
+            <span id="resumo-pvp-desc" style="font-family:var(--mono);font-size:12px;color:#ff8a80;min-width:70px;text-align:right">
+              ${descPct > 0 ? '- ' + fmtPVP(pvpDesc) : '—'}
+            </span>
+          </div>
+
           <!-- Total PVP -->
           <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 14px">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);margin-bottom:6px">
-              Total PVP (cliente)
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">
+                Total PVP (cliente)
+              </div>
+              ${descPct > 0 ? `<div style="font-size:10px;color:var(--t4);text-decoration:line-through;font-family:var(--mono)">${fmtPVP(pvpBruto)}</div>` : ''}
             </div>
             <div id="resumo-pvp-total" style="font-family:var(--serif);font-size:26px;color:var(--t1)">
               ${fmtPVP(pvpTotal)}
@@ -1214,11 +1236,17 @@ window.calcTransporte = function(idx) {
   TS.calc.transporte = idx;
   renderCalculadora();
 };
+window.calcDescontoUpdate = function(val) {
+  TS.calc.desconto = parseNum(val);
+  updateResumoCalc();
+};
+
 window.calcLimpar = function() {
-  TS.calc.pecas = [{ id: gerarIdPeca(), comp: '', larg: '0.65' }];
+  TS.calc.pecas        = [{ id: gerarIdPeca(), comp: '', larg: '0.65' }];
   TS.calc.revestimento = [];
   TS.calc.acabamentos  = {};
   TS.calc.transporte   = null;
+  TS.calc.desconto     = 10;
   renderCalculadora();
 };
 
@@ -1248,9 +1276,18 @@ function updateResumoCalc() {
   const transp   = TS.calc.transporte !== null ? TRANSPORTE[TS.calc.transporte] : null;
   const pvpTotal = pvpTampo + pvpRev + pvpAcb + (transp ? transp.pvp : 0);
 
+  // Calcular desconto
+  const descPct2  = parseNum(TS.calc.desconto) || 0;
+  const pvpDesc2  = (pvpTampo + pvpRev + pvpAcb + (transp ? transp.pvp : 0)) * (descPct2 / 100);
+  const pvpFinal  = pvpTampo + pvpRev + pvpAcb + (transp ? transp.pvp : 0) - pvpDesc2;
+
   // Actualizar total PVP
   const totalEl = document.getElementById('resumo-pvp-total');
-  if (totalEl) totalEl.textContent = fmtPVP(pvpTotal);
+  if (totalEl) totalEl.textContent = fmtPVP(pvpFinal);
+
+  // Actualizar linha desconto
+  const descEl = document.getElementById('resumo-pvp-desc');
+  if (descEl) descEl.textContent = descPct2 > 0 ? '- ' + fmtPVP(pvpDesc2) : '—';
 
   // Actualizar linha tampo no resumo
   const linTampo = document.getElementById('resumo-linha-tampo');
