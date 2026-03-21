@@ -240,6 +240,7 @@ let TS = {
     material:    'Silestone',
     artigo:      null,          // artigo seleccionado
     espessura:   '2cm',
+    espRev:      '1.2cm',       // espessura do revestimento
     pecas:       [],            // [{id, comp, larg}]
     revestimento:[],            // [{id, comp, larg}]
     acabamentos: {},            // {rodatampo: 0, cortebruto: 0, ...}
@@ -432,16 +433,16 @@ function renderCardTampo(a, mat) {
       ` : `
         <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
           <!-- C1 clicável -->
-          <button onclick="window.copiar('${c1}',this)"
+          <button data-c1btn data-val="${c1}" onclick="window.copiar('${c1}',this)"
             style="display:flex;flex-direction:column;align-items:flex-start;background:rgba(196,97,42,.08);border:1px solid rgba(196,97,42,.2);border-radius:7px;padding:5px 9px;cursor:pointer;transition:all .15s;min-width:0"
             title="Clica para copiar C1">
             <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(196,97,42,.6)">C1 ⎘</span>
-            <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:rgba(255,190,152,.8)">${fmtC1(c1)}</span>
+            <span data-c1val style="font-family:var(--mono);font-size:13px;font-weight:700;color:rgba(255,190,152,.8)">${fmtC1(c1)}</span>
           </button>
           <!-- PVP -->
           <div style="text-align:right">
             <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">PVP / m²</div>
-            <div style="font-family:var(--mono);font-size:15px;font-weight:600;color:var(--t1)">${fmtPVP(pvp)}</div>
+            <div data-pvpval style="font-family:var(--mono);font-size:15px;font-weight:600;color:var(--t1)">${fmtPVP(pvp)}</div>
           </div>
         </div>
       `}
@@ -468,15 +469,18 @@ window.tampoVerC1 = function(nome, esp, btn) {
   const mat = TAMPOS_DB[TS.material];
   const a = mat.artigos.find(x => x.nome === nome);
   if (!a) return;
-  // Actualizar card visualmente
   const card = btn.closest('.tampo-card');
   if (card) {
-    const c1btn = card.querySelector('[title="Clica para copiar C1"]');
-    const pvpEl = card.querySelector('[style*="PVP"]');
-    if (c1btn) {
-      c1btn.querySelector('span:last-child').textContent = fmtC1(a.c1[esp]);
+    // Actualizar C1 — valor e onclick
+    const c1btn = card.querySelector('[data-c1btn]');
+    if (c1btn && a.c1[esp]) {
+      c1btn.querySelector('[data-c1val]').textContent = fmtC1(a.c1[esp]);
+      c1btn.setAttribute('data-val', a.c1[esp]);
       c1btn.onclick = () => copiar(String(a.c1[esp]), c1btn);
     }
+    // Actualizar PVP — correcção do bug
+    const pvpVal = card.querySelector('[data-pvpval]');
+    if (pvpVal) pvpVal.textContent = fmtPVP(a.pvp[esp] || null);
   }
   // Highlight botão espessura activa
   btn.parentElement.querySelectorAll('button').forEach(b => {
@@ -542,7 +546,7 @@ function renderCalculadora() {
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <select id="calc-artigo" onchange="window.calcSelectArtigo(this.value)"
-              style="flex:1;min-width:180px;padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid var(--glass-brd);border-radius:8px;font-family:var(--sans);font-size:12px;color:var(--t1)">
+              style="flex:1;min-width:180px;padding:8px 10px;background:#1C1C1F;border:1px solid var(--glass-brd);border-radius:8px;font-family:var(--sans);font-size:12px;color:var(--t1)">
               <option value="">— Seleccionar artigo —</option>
               ${mat.artigos.filter(a => !a.consulta).map(a =>
                 `<option value="${a.nome}" ${artigo?.nome === a.nome ? 'selected' : ''}>${a.grupo ? '['+a.grupo+'] ' : ''}${a.nome}</option>`
@@ -574,7 +578,20 @@ function renderCalculadora() {
         ${renderSecaoPecas('calc', 'pecas', '🪨 Tampo — Peças')}
 
         <!-- Revestimento -->
-        ${renderSecaoPecas('calc', 'revestimento', '🧱 Revestimento — Peças')}
+        <!-- Revestimento com espessura -->
+      <div class="glass-card" style="padding:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="tampo-calc-label">🧱 Revestimento — Peças</div>
+          <div style="display:flex;gap:4px;align-items:center">
+            <span style="font-size:9px;color:var(--t4);margin-right:2px">Espessura:</span>
+            ${(TAMPOS_DB[TS.calc.material].espessuras).map(e => `
+              <button onclick="window.calcSelectEspRev('${e}')"
+                class="btn-sec ${(TS.calc.espRev||TS.calc.espessura) === e ? 'active' : ''}"
+                style="padding:4px 9px;font-size:10px">${e}</button>`).join('')}
+          </div>
+        </div>
+        ${renderSecaoPecasInner('calc', 'revestimento')}
+      </div>
 
         <!-- Acabamentos -->
         <div class="glass-card" style="padding:16px">
@@ -583,7 +600,11 @@ function renderCalculadora() {
             ${acbs.map(acb => `
               <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px">
                 <div style="flex:1;font-size:12px;color:var(--t2)">${acb.nome}</div>
-                <div style="font-family:var(--mono);font-size:10px;color:var(--t4);white-space:nowrap">${fmtPVP(acb.pvp)}/${acb.unid}</div>
+                <button onclick="window.copiar('${acb.c1}',this)" title="Copiar C1"
+                  style="font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(196,97,42,.08);border:1px solid rgba(196,97,42,.18);color:rgba(255,190,152,.6);cursor:pointer;white-space:nowrap">
+                  C1:${fmtC1(acb.c1)} ⎘
+                </button>
+                <div style="font-family:var(--mono);font-size:10px;color:var(--t4);white-space:nowrap">PVP:${fmtPVP(acb.pvp)}/${acb.unid}</div>
                 <input type="number" min="0" step="${acb.unid === 'ml' ? '0.1' : '1'}"
                   value="${TS.calc.acabamentos[acb.id] || ''}"
                   placeholder="0"
@@ -772,8 +793,12 @@ function renderResumoCalc() {
 
         <!-- Limpar -->
         ${artigo ? `
+          <button onclick="window.calcParaComparador()"
+            style="width:100%;padding:8px;border-radius:7px;background:rgba(42,107,122,.1);border:1px solid rgba(42,107,122,.25);color:rgba(150,220,230,.7);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;margin-bottom:6px">
+            ⚖️ Comparar com outro tampo →
+          </button>
           <button onclick="window.calcLimpar()"
-            style="padding:7px;border-radius:7px;background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--t4);font-size:11px;cursor:pointer;transition:all .15s">
+            style="width:100%;padding:7px;border-radius:7px;background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--t4);font-size:11px;cursor:pointer;transition:all .15s">
             ↺ Limpar cálculo
           </button>` : ''}
       </div>
@@ -880,7 +905,12 @@ function renderComparador() {
             <div class="glass-card" style="padding:14px">
               <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
                 <span style="width:22px;height:22px;border-radius:50%;background:${l==='A' ? 'rgba(196,97,42,.3)' : 'rgba(42,107,122,.3)'};border:1px solid ${l==='A' ? 'rgba(196,97,42,.5)' : 'rgba(42,107,122,.5)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${l==='A' ? 'rgba(255,190,152,.8)' : 'rgba(150,220,230,.8)'}">${l}</span>
-                <div class="tampo-calc-label">Tampo ${l}</div>
+                <div class="tampo-calc-label" style="flex:1">Tampo ${l}</div>
+                ${TS.comp.lado[l].artigo ? `
+                  <button onclick="window.compLimparLado('${l}')" title="Limpar este lado"
+                    style="padding:3px 8px;border-radius:5px;background:rgba(192,57,43,.15);border:1px solid rgba(192,57,43,.25);color:#ffb3a0;font-size:10px;cursor:pointer">
+                    ✕ Limpar
+                  </button>` : ''}
               </div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
                 ${materiais.map(m => `
@@ -888,7 +918,7 @@ function renderComparador() {
                     class="chip ${s.material === m ? 'active' : ''}" style="font-size:10px;padding:3px 8px">${m}</button>`).join('')}
               </div>
               <select onchange="window.compSelectArtigo('${l}',this.value)"
-                style="width:100%;padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid var(--glass-brd);border-radius:8px;font-family:var(--sans);font-size:12px;color:var(--t1);margin-bottom:8px">
+                style="width:100%;padding:8px 10px;background:#1C1C1F;border:1px solid var(--glass-brd);border-radius:8px;font-family:var(--sans);font-size:12px;color:var(--t1);margin-bottom:8px">
                 <option value="">— Seleccionar —</option>
                 ${mat.artigos.filter(a => !a.consulta).map(a =>
                   `<option value="${a.nome}" ${s.artigo?.nome === a.nome ? 'selected' : ''}>${a.grupo ? '['+a.grupo+'] ' : ''}${a.nome}</option>`
@@ -1038,3 +1068,68 @@ function updateResumoComp() { renderComparador(); }
 // Expor init
 window.switchTampoTab = switchTampoTab;
 window.tampoInit      = tampoInit;
+
+// ── Funções adicionais ────────────────────────────────────────────
+
+// renderSecaoPecasInner — versão sem card wrapper (para uso dentro de card próprio)
+function renderSecaoPecasInner(ctx, campo) {
+  const state = TS[ctx];
+  const pecas = state[campo];
+  let totalM2 = 0;
+  pecas.forEach(p => {
+    const c = parseFloat(p.comp) || 0;
+    const l = parseFloat(p.larg) || 0;
+    if (c > 0 && l > 0) totalM2 += c * l;
+  });
+  return `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div></div>
+      <div style="font-family:var(--mono);font-size:12px;font-weight:700;color:rgba(255,190,152,.7)">
+        Total: ${totalM2.toFixed(4)} m²
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 80px 28px;gap:6px;margin-bottom:6px;padding:0 4px">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">Comp (m)</div>
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">Larg (m)</div>
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);text-align:right">m²</div>
+      <div></div>
+    </div>
+    <div id="${ctx}-${campo}-linhas">
+      ${pecas.map((p, i) => renderLinhaPeca(ctx, campo, p, i)).join('')}
+    </div>
+    <button onclick="window.calcAddPeca('${ctx}','${campo}')"
+      style="width:100%;margin-top:8px;padding:7px;border-radius:7px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.12);color:var(--t4);font-size:11px;font-weight:600;cursor:pointer">
+      + Adicionar peça
+    </button>`;
+}
+
+// Espessura do revestimento
+window.calcSelectEspRev = function(esp) {
+  TS.calc.espRev = esp;
+  renderCalculadora();
+};
+
+// Transferir calc → comparador (aproveitando todas as medidas)
+window.calcParaComparador = function() {
+  // Copiar peças e acabamentos para o comparador
+  TS.comp.pecas        = TS.calc.pecas.map(p => ({...p}));
+  TS.comp.revestimento = TS.calc.revestimento.map(p => ({...p}));
+  TS.comp.acabamentos  = {...TS.calc.acabamentos};
+  TS.comp.transporte   = TS.calc.transporte;
+  // Lado A = artigo actual da calculadora
+  TS.comp.lado.A.material  = TS.calc.material;
+  TS.comp.lado.A.artigo    = TS.calc.artigo;
+  TS.comp.lado.A.espessura = TS.calc.espessura;
+  // Lado B — material diferente, sem artigo (para o utilizador escolher)
+  const outroMat = Object.keys(TAMPOS_DB).find(m => m !== TS.calc.material) || 'Dekton';
+  TS.comp.lado.B.material  = outroMat;
+  TS.comp.lado.B.artigo    = null;
+  TS.comp.lado.B.espessura = TAMPOS_DB[outroMat].espessuras[0];
+  switchTampoTab('comparador');
+};
+
+// Limpar um lado do comparador
+window.compLimparLado = function(l) {
+  TS.comp.lado[l].artigo = null;
+  renderComparador();
+};
