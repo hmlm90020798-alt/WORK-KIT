@@ -1344,7 +1344,14 @@ function moRenderPainel() {
             <button onclick="window.moQty(${i},-1)"
               style="width:22px;height:22px;border-radius:5px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
               color:var(--t2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</button>
-            <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--t1);min-width:18px;text-align:center">${s.qty || 1}</span>
+            <input type="number" min="1" step="1" value="${s.qty || 1}"
+              onchange="window.moQtyDirecto(${i}, this.value)"
+              oninput="window.moQtyDirecto(${i}, this.value)"
+              style="width:44px;padding:3px 6px;border-radius:5px;background:rgba(255,255,255,.06);
+              border:1px solid rgba(255,255,255,.1);font-family:var(--mono);font-size:13px;font-weight:700;
+              color:var(--t1);text-align:center;outline:none;-moz-appearance:textfield"
+              onfocus="this.style.borderColor='rgba(196,97,42,.4)'"
+              onblur="this.style.borderColor='rgba(255,255,255,.1)'">
             <button onclick="window.moQty(${i},+1)"
               style="width:22px;height:22px;border-radius:5px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
               color:var(--t2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>
@@ -1362,7 +1369,7 @@ function moRenderPainel() {
         <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,190,152,.5)">Total Mão de Obra</div>
         <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:1px">${ST.moOrc.length} serviço${ST.moOrc.length!==1?'s':''}</div>
       </div>
-      <span style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--peach)">${fmt(total)}</span>
+      <span style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--peach)" class="mo-total-val">${fmt(total)}</span>
     </div>
 
     <!-- Acções -->
@@ -1379,6 +1386,17 @@ window.moQty = function(idx, delta) {
   if (!ST.moOrc[idx]) return;
   ST.moOrc[idx].qty = Math.max(1, (ST.moOrc[idx].qty || 1) + delta);
   moRenderPainel();
+};
+
+window.moQtyDirecto = function(idx, val) {
+  if (!ST.moOrc[idx]) return;
+  const n = parseInt(val);
+  if (isNaN(n) || n < 1) return;
+  ST.moOrc[idx].qty = n;
+  // Actualizar só o total e o valor da linha sem re-render completo
+  const totalSpan = document.querySelector('#mo-painel-body .mo-total-val');
+  const total = ST.moOrc.reduce((s, a) => s + (a.pvp > 0 ? a.pvp * (a.qty || 1) : 0), 0);
+  if (totalSpan) totalSpan.textContent = fmt(total);
 };
 
 window.moOrcToggleDetalhe = function(idx) {
