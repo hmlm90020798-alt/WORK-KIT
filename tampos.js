@@ -1157,17 +1157,22 @@ window.calcSelectEsp = function(esp) {
   renderCalculadora();
 };
 window.calcAddPeca = function(ctx, campo) {
-  TS[ctx][campo].push({ id: gerarIdPeca(), comp: '', larg: '0.65' });
-  renderCalculadora();
-  if (ctx === 'comp') {
-    // Actualizar total da secção sem re-renderizar
-    const totalComp = document.getElementById(ctx + '-' + campo + '-total');
-    if (totalComp) {
-      const t = calcTotalM2(TS[ctx][campo]);
-      totalComp.textContent = 'Total: ' + t.toFixed(4) + ' m²';
-    }
-    // Actualizar resultado comparativo
-    updateResultadoComp();
+  const novaPeca = { id: gerarIdPeca(), comp: '', larg: '0.65' };
+  TS[ctx][campo].push(novaPeca);
+
+  // Tentar adicionar linha directamente ao DOM
+  const linhasEl = document.getElementById(ctx + '-' + campo + '-linhas');
+  if (linhasEl) {
+    const div = document.createElement('div');
+    div.innerHTML = renderLinhaPeca(ctx, campo, novaPeca, TS[ctx][campo].length - 1);
+    linhasEl.appendChild(div.firstElementChild);
+    // Actualizar total
+    const totalEl3 = document.getElementById(ctx + '-' + campo + '-total');
+    if (totalEl3) totalEl3.textContent = 'Total: ' + calcTotalM2(TS[ctx][campo]).toFixed(4) + ' m²';
+  } else {
+    // Fallback: re-render completo
+    if (ctx === 'calc') renderCalculadora();
+    else renderComparador();
   }
 };
 window.calcRemPeca = function(ctx, campo, id) {
