@@ -173,8 +173,20 @@ async function carregarOverrides() {
 }
 async function guardarOverride(ref, dados) {
   _overrides[ref] = dados;
+  // Actualizar também o artigo em memória no ELETRO_DB para reflectir imediatamente
+  ELETRO_DB.forEach(t => {
+    const a = t.artigos.find(a => a.ref === ref);
+    if (a) Object.assign(a, {
+      nome:     dados.nome     ?? a.nome,
+      marca:    dados.marca    ?? a.marca,
+      preco:    dados.preco    ?? a.preco,
+      url:      dados.url      ?? a.url,
+      caract:   dados.caract   ?? a.caract,
+      detalhes: dados.detalhes ?? a.detalhes,
+    });
+  });
   const db = getDb(); if (!db) return;
-  try { await setDoc(doc(db, 'wk_eletros_overrides', ref), dados); } catch(e) {}
+  try { await setDoc(doc(db, 'wk_eletros_overrides', ref), dados); } catch(e) { console.warn('eletros: guardar override', e); }
 }
 async function apagarOverrideDb(ref) {
   delete _overrides[ref];
@@ -700,54 +712,107 @@ function renderOrcamento() {
             border:1px solid rgba(196,97,42,.25);color:rgba(255,190,152,.7);font-family:var(--sans);
             font-size:11px;font-weight:700;cursor:pointer">→ Ver Catálogo</button>
          </div>`
-      :`<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
-          ${ES.orc.map((a,i)=>`
+      :`
+        <!-- Lista de itens -->
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+          ${ES.orc.map((a,i) => {
+            const corTipo = getCorTipo(a._tipo);
+            const iconTipo = getIconTipo(a._tipo);
+            const temDetalhes = !!(a.caract || a.detalhes || a.url);
+            return `
             <div style="background:var(--glass-bg);backdrop-filter:blur(16px);border:1px solid var(--glass-brd);
-              border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-              <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:2px 8px;
-                border-radius:99px;flex-shrink:0;background:${getCorTipo(a._tipo)}18;
-                border:1px solid ${getCorTipo(a._tipo)}33;color:${getCorTipo(a._tipo)}">
-                ${getIconTipo(a._tipo)} ${a._tipo}
-              </span>
-              <div style="flex:1;min-width:130px">
-                <div style="font-size:12px;font-weight:600;color:var(--t1)">${a.nome}</div>
-                <div style="display:flex;align-items:center;gap:5px;margin-top:2px;flex-wrap:wrap">
-                  <span style="font-size:9px;font-weight:700;color:var(--t4);font-family:var(--mono)">${a.marca||''}</span>
-                  <span style="font-family:var(--mono);font-size:10px;color:var(--t4)">· Ref: ${a.ref}</span>
-                  <button onclick="window.eletrosCopiarRef('${a.ref}',this)"
-                    style="padding:1px 5px;border-radius:3px;background:rgba(255,255,255,.05);
-                    border:1px solid rgba(255,255,255,.08);color:var(--t4);font-size:9px;cursor:pointer">⎘</button>
+              border-radius:12px;overflow:hidden">
+
+              <!-- Linha principal -->
+              <div style="padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:2px 8px;
+                  border-radius:99px;flex-shrink:0;background:${corTipo}18;border:1px solid ${corTipo}33;color:${corTipo}">
+                  ${iconTipo} ${a._tipo}
+                </span>
+                <div style="flex:1;min-width:120px">
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                    <span style="font-size:12px;font-weight:600;color:var(--t1)">${a.nome}</span>
+                    ${temDetalhes ? `
+                    <button onclick="window.eletrosOrcToggleDetalhe(${i})"
+                      id="orc-det-btn-${i}"
+                      style="padding:2px 7px;border-radius:5px;font-family:var(--sans);font-size:9px;font-weight:700;
+                      cursor:pointer;transition:all .15s;background:rgba(255,255,255,.05);
+                      border:1px solid rgba(255,255,255,.1);color:var(--t4)">
+                      ℹ︎ ver
+                    </button>` : ''}
+                  </div>
+                  <div style="display:flex;align-items:center;gap:5px;margin-top:2px;flex-wrap:wrap">
+                    <span style="font-size:9px;font-weight:700;color:var(--t4);font-family:var(--mono)">${a.marca||''}</span>
+                    <span style="font-family:var(--mono);font-size:10px;color:var(--t4)">· Ref: ${a.ref}</span>
+                    <button onclick="window.eletrosCopiarRef('${a.ref}',this)"
+                      style="padding:1px 5px;border-radius:3px;background:rgba(255,255,255,.05);
+                      border:1px solid rgba(255,255,255,.08);color:var(--t4);font-size:9px;cursor:pointer">⎘</button>
+                    ${a.url?`<a href="${a.url}" target="_blank" rel="noopener"
+                      style="padding:1px 6px;border-radius:3px;background:rgba(196,97,42,.08);
+                      border:1px solid rgba(196,97,42,.2);color:rgba(255,190,152,.6);font-size:9px;text-decoration:none">↗ LM</a>`:''}
+                  </div>
+                  <input type="text" placeholder="Nota…" value="${a.nota||''}"
+                    onchange="window.eletrosAtualizarNota(${i},this.value)"
+                    style="margin-top:6px;width:100%;padding:4px 8px;border-radius:5px;
+                    background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+                    font-family:var(--sans);font-size:10px;color:var(--t2);outline:none"
+                    onfocus="this.style.borderColor='rgba(196,97,42,.3)'"
+                    onblur="this.style.borderColor='rgba(255,255,255,.07)'">
                 </div>
-                <input type="text" placeholder="Nota…" value="${a.nota||''}"
-                  onchange="window.eletrosAtualizarNota(${i},this.value)"
-                  style="margin-top:6px;width:100%;padding:4px 8px;border-radius:5px;
-                  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
-                  font-family:var(--sans);font-size:10px;color:var(--t2);outline:none"
-                  onfocus="this.style.borderColor='rgba(196,97,42,.3)'"
-                  onblur="this.style.borderColor='rgba(255,255,255,.07)'">
+                <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+                  <button onclick="window.eletrosQty(${i},-1)"
+                    style="width:26px;height:26px;border-radius:6px;background:rgba(255,255,255,.07);
+                    border:1px solid rgba(255,255,255,.1);color:var(--t2);font-size:14px;cursor:pointer;
+                    display:flex;align-items:center;justify-content:center">−</button>
+                  <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--t1);min-width:20px;text-align:center">${a.qty||1}</span>
+                  <button onclick="window.eletrosQty(${i},+1)"
+                    style="width:26px;height:26px;border-radius:6px;background:rgba(255,255,255,.07);
+                    border:1px solid rgba(255,255,255,.1);color:var(--t2);font-size:14px;cursor:pointer;
+                    display:flex;align-items:center;justify-content:center">+</button>
+                </div>
+                <div style="text-align:right;flex-shrink:0;min-width:80px">
+                  <div style="font-size:9px;color:var(--t4)">${fmt(a.preco)} / un</div>
+                  <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--t1)">${fmt((a.preco||0)*(a.qty||1))}</div>
+                </div>
+                <button onclick="window.eletroToggleOrc('${a.ref}')"
+                  style="width:28px;height:28px;border-radius:50%;background:rgba(192,57,43,.1);
+                  border:1px solid rgba(192,57,43,.2);color:rgba(255,150,140,.5);font-size:14px;cursor:pointer;
+                  display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
               </div>
-              <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
-                <button onclick="window.eletrosQty(${i},-1)"
-                  style="width:26px;height:26px;border-radius:6px;background:rgba(255,255,255,.07);
-                  border:1px solid rgba(255,255,255,.1);color:var(--t2);font-size:14px;cursor:pointer;
-                  display:flex;align-items:center;justify-content:center">−</button>
-                <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--t1);min-width:20px;text-align:center">${a.qty||1}</span>
-                <button onclick="window.eletrosQty(${i},+1)"
-                  style="width:26px;height:26px;border-radius:6px;background:rgba(255,255,255,.07);
-                  border:1px solid rgba(255,255,255,.1);color:var(--t2);font-size:14px;cursor:pointer;
-                  display:flex;align-items:center;justify-content:center">+</button>
-              </div>
-              <div style="text-align:right;flex-shrink:0;min-width:80px">
-                <div style="font-size:9px;color:var(--t4)">${fmt(a.preco)} / un</div>
-                <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--t1)">${fmt((a.preco||0)*(a.qty||1))}</div>
-              </div>
-              <button onclick="window.eletroToggleOrc('${a.ref}')"
-                style="width:28px;height:28px;border-radius:50%;background:rgba(192,57,43,.1);
-                border:1px solid rgba(192,57,43,.2);color:rgba(255,150,140,.5);font-size:14px;cursor:pointer;
-                display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
-            </div>`).join('')}
+
+              <!-- Painel de detalhes expansível (oculto por defeito) -->
+              ${temDetalhes ? `
+              <div id="orc-det-${i}" style="display:none;padding:12px 16px;border-top:1px solid rgba(255,255,255,.06);
+                background:rgba(255,255,255,.02)">
+                ${a.caract ? `
+                  <div style="margin-bottom:10px">
+                    <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+                      color:rgba(196,97,42,.5);margin-bottom:6px">Características</div>
+                    <div style="display:flex;flex-direction:column;gap:3px">
+                      ${a.caract.split('·').map(c=>`
+                        <div style="font-size:11px;color:var(--t2);line-height:1.6">· ${c.trim()}</div>`).join('')}
+                    </div>
+                  </div>` : ''}
+                ${a.detalhes ? `
+                  <div style="margin-bottom:10px">
+                    <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+                      color:var(--t4);margin-bottom:6px">Detalhes</div>
+                    <div style="font-size:11px;color:var(--t3);line-height:1.7">${a.detalhes}</div>
+                  </div>` : ''}
+                ${a.url ? `
+                  <a href="${a.url}" target="_blank" rel="noopener"
+                    style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:7px;
+                    background:rgba(196,97,42,.1);border:1px solid rgba(196,97,42,.2);
+                    color:rgba(255,190,152,.7);font-family:var(--sans);font-size:11px;font-weight:600;text-decoration:none">
+                    ↗ Ver produto em leroymerlin.pt
+                  </a>` : ''}
+              </div>` : ''}
+
+            </div>`;
+          }).join('')}
         </div>
 
+        <!-- Total -->
         <div style="background:rgba(196,97,42,.07);border:1px solid rgba(196,97,42,.2);border-radius:14px;
           padding:16px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
           <div>
@@ -756,22 +821,9 @@ function renderOrcamento() {
           </div>
           <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--peach)">${fmt(total)}</div>
         </div>
-
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button onclick="window.eletrosCopiarOrcamento()"
-            style="flex:1;min-width:180px;padding:11px;border-radius:10px;background:rgba(196,97,42,.15);
-            border:1px solid rgba(196,97,42,.3);color:rgba(255,190,152,.85);font-family:var(--sans);
-            font-size:12px;font-weight:700;cursor:pointer">
-            📋 Copiar Orçamento c/ Referências
-          </button>
-          <button onclick="window.eletrosCopiarSoRefs()"
-            style="flex:1;min-width:150px;padding:11px;border-radius:10px;background:rgba(255,255,255,.06);
-            border:1px solid rgba(255,255,255,.12);color:var(--t2);font-family:var(--sans);
-            font-size:12px;font-weight:600;cursor:pointer">
-            ⎘ Só Referências LM
-          </button>
-        </div>`
+      `
     }`;
+}
 }
 
 // ════════════════════════════════════════════════
@@ -818,6 +870,20 @@ window.eletrosQty = function(idx, delta) {
 };
 
 window.eletrosAtualizarNota  = function(idx, nota) { if (ES.orc[idx]) ES.orc[idx].nota = nota; };
+
+window.eletrosOrcToggleDetalhe = function(idx) {
+  const painel = document.getElementById('orc-det-' + idx);
+  const btn    = document.getElementById('orc-det-btn-' + idx);
+  if (!painel) return;
+  const aberto = painel.style.display !== 'none';
+  painel.style.display = aberto ? 'none' : 'block';
+  if (btn) {
+    btn.textContent = aberto ? 'ℹ︎ ver' : 'ℹ︎ fechar';
+    btn.style.background    = aberto ? 'rgba(255,255,255,.05)' : 'rgba(196,97,42,.15)';
+    btn.style.borderColor   = aberto ? 'rgba(255,255,255,.1)'  : 'rgba(196,97,42,.3)';
+    btn.style.color         = aberto ? 'var(--t4)'             : 'rgba(255,190,152,.8)';
+  }
+};
 window.eletrosCopiarRef      = function(ref, btn)  { copiar(ref, btn); };
 
 window.eletrosLimpar = function() {
