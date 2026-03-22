@@ -104,6 +104,11 @@ function filtrar(artigos, c) {
 // ════════════════════════════════════════════════
 // PROMPT
 // ════════════════════════════════════════════════
+function promptPDF() {
+  const cat = MATERIAIS_DB.filter(a=>a.ref&&a.nome).map(a=>a.ref+'|'+a.nome+'|'+a.familia+'|'+a.preco+'EUR').join('\n');
+  return 'Es o assistente tecnico da Leroy Merlin Viseu. Recebes uma lista de materiais em linguagem comum (lista de tecnicos de instalacao) e tens de encontrar os artigos correspondentes no catalogo LM.\n\nCATALOGO LM:\n'+cat+'\n\nINSTRUCOES:\n1. Para cada item da lista, encontra o artigo mais proximo no catalogo\n2. Se encontrares -> ref LM, nome, preco, qty da lista original\n3. Se nao encontrares -> fonte pesquisar\n4. Ignora servicos de instalacao (codigos 490xxxxx)\n5. Inclui as quantidades indicadas na lista\n\nRESPOSTA - JSON puro sem texto antes/depois:\n{"artigos":[{"ref":"...","nome":"...","familia":"...","preco":0,"qty":1,"fonte":"catalogo","grupo":"base"}],"nao_encontrados":["item sem correspondencia no catalogo"],"resumo":"..."}';
+}
+
 function prompt() {
   // Só artigos relevantes para cozinhas — excluir pladur, tetos, cantoneiras, etc.
   const FAMILIAS_COZINHA = ['Fixação e Estrutura','Ferragens e Acessórios','Vedação e Selagem','Iluminação','Lava-Louça e Torneiras','Material PRO','Acabamentos e Renovação'];
@@ -208,6 +213,12 @@ export function assistenteInit() {
 .asacao-sec{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.09);color:var(--t3)}
 .asacao-sec:hover{background:rgba(255,255,255,.08)}
 .aserro{padding:20px;text-align:center;color:rgba(255,140,130,.6);font-size:12px;line-height:1.7}
+.aspdf-wrap{margin-top:8px;display:flex;align-items:center;gap:8px}
+.aspdf-btn{display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);color:var(--t3);font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.aspdf-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);color:var(--t2)}
+.aspdf-status{font-size:10px;color:var(--t4);font-style:italic}
+.aspdf-status.ok{color:rgba(100,200,120,.7);font-style:normal}
+.aspdf-status.err{color:rgba(255,140,130,.6);font-style:normal}
 @media(max-width:768px){.aswrap{grid-template-columns:1fr;height:auto}.asdir{min-height:400px}}
 </style>
 <div class="aswrap">
@@ -225,6 +236,10 @@ export function assistenteInit() {
         <button class="asbtn" id="ass-btn" onclick="window.assEnviar()">
           <span id="ass-btn-txt">Gerar Lista</span><span class="asbtn-arr">→</span>
         </button>
+      </div>
+      <div class="aspdf-wrap">
+        <label class="aspdf-btn">Ler PDF de instalacao<input type="file" id="ass-pdf-input" accept=".pdf" style="display:none" onchange="window.assLerPDF(this)"></label>
+        <span id="aspdf-status" class="aspdf-status"></span>
       </div>
     </div>
     <div class="asex">
@@ -441,6 +456,112 @@ window.assAdicionarTodos=function(){
     if(a.fonte!=='pesquisar'&&!AS.orcRefs.has(a.ref)){window.assToggleOrc(a.ref,a.nome,a.familia,a.preco);n++;}
   });
   if(n)window.wkToast?.(`✓ ${n} artigos adicionados ao orçamento`);
+};
+
+window.assLerPDF=async function(input){
+  const file=input.files[0];
+  if(!file)return;
+  const status=document.getElementById('aspdf-status');
+  const lbl=document.getElementById('aspdf-txt');
+  status.textContent='A ler PDF...';
+  status.className='aspdf-status';
+  try {
+    // Ler PDF como ArrayBuffer e extrair texto via FileReader
+    const text=await new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload=async e=>{
+        try {
+          // Usar pdf.js via CDN para extrair texto
+          const pdfjsLib=window['pdfjs-dist/build/pdf'];
+          if(!pdfjsLib){
+            // Carregar pdf.js dinamicamente
+            await new Promise((resolve,reject)=>{
+              const s=document.createElement('script');
+              s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+              s.onload=resolve;s.onerror=reject;
+              document.head.appendChild(s);
+            });
+          }
+          const pdf_lib=window['pdfjs-dist/build/pdf']||window.pdfjsLib;
+          if(pdf_lib&&pdf_lib.GlobalWorkerOptions){
+            pdf_lib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+          }
+          const lib=pdf_lib||window.pdfjsLib;
+          const pdf=await lib.getDocument({data:e.target.result}).promise;
+          let txt='';
+          for(let i=1;i<=pdf.numPages;i++){
+            const pg=await pdf.getPage(i);
+            const content=await pg.getTextContent();
+            txt+=content.items.map(item=>item.str).join(' ')+'
+';
+          }
+          res(txt);
+        } catch(err){rej(err);}
+      };
+      r.onerror=rej;
+      r.readAsArrayBuffer(file);
+    });
+
+    // Filtrar para a secao "Material a Adquirir"
+    const secaoMatch=text.match(/Material a Adquirir[\s\S]*?(?=Notas Finais|Total Ili|$)/i);
+    const textoMaterial=secaoMatch?secaoMatch[0]:text;
+
+    status.textContent='A identificar materiais...';
+
+    // Chamar IA com o texto extraido
+    AS.loading=true;
+    setBtnLoad(true);
+    document.getElementById('ass-empty').style.display='none';
+    const res2=document.getElementById('ass-resultado');
+    res2.style.display='';
+    res2.innerHTML='<div class="asload"><div class="asdot"></div><div class="asdot"></div><div class="asdot"></div></div>';
+
+    const response=await fetch(GROQ_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_KEY},
+      body:JSON.stringify({
+        model:GROQ_MODEL,max_tokens:2000,temperature:0.1,
+        messages:[
+          {role:'system',content:promptPDF()},
+          {role:'user',content:'Lista de materiais do PDF:
+
+'+textoMaterial.substring(0,4000)},
+        ],
+      }),
+    });
+    const data=await response.json();
+    const raw=data.choices?.[0]?.message?.content||'';
+
+    let parsed;
+    try {
+      let clean=raw.replace(/```json
+?/g,'').replace(/```
+?/g,'').trim();
+      if(!clean.startsWith('{'))clean=clean.slice(clean.indexOf('{'));
+      const last=clean.lastIndexOf('}');
+      if(last>=0)clean=clean.slice(0,last+1);
+      parsed=JSON.parse(clean);
+    } catch(err){ throw new Error('Resposta invalida da IA'); }
+
+    AS.resultados=parsed.artigos||[];
+    renderRes({
+      artigos:parsed.artigos||[],
+      alertas:parsed.nao_encontrados?.length?[{nivel:'atencao',texto:'Sem correspondencia no catalogo: '+parsed.nao_encontrados.join(', ')}]:[],
+      em_falta:[],
+      resumo:parsed.resumo||'Lista de materiais do PDF '+file.name,
+    });
+
+    status.textContent='PDF lido com sucesso';
+    status.className='aspdf-status ok';
+    input.value='';
+  } catch(e){
+    status.textContent='Erro: '+e.message;
+    status.className='aspdf-status err';
+    console.error('PDF erro:',e);
+  } finally {
+    AS.loading=false;
+    setBtnLoad(false);
+  }
 };
 
 window.assCopiarRefs=function(){
