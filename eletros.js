@@ -4,10 +4,26 @@
 //      Outros editável · Sem duplicado · Botões OK
 // ════════════════════════════════════════════════
 
-import { doc, setDoc, deleteDoc, getDocs, collection }
+import { doc, setDoc, getDoc, deleteDoc, getDocs, collection }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 function getDb() { return window._wkDb || null; }
+
+const ELETRO_ORC_DOC = 'wk_eletros_orcamento';
+
+export async function eletroCarregarOrcamento() {
+  const db = getDb(); if (!db) return;
+  try {
+    const snap = await getDoc(doc(db, 'wk_estado', ELETRO_ORC_DOC));
+    if (snap.exists()) { ES.orc = snap.data().orc || []; atualizarBadge(); }
+  } catch(e) { console.warn('Eletros: erro ao carregar orçamento', e); }
+}
+
+async function eletroGuardarOrcamento() {
+  const db = getDb(); if (!db) return;
+  try { await setDoc(doc(db, 'wk_estado', ELETRO_ORC_DOC), { orc: ES.orc, ts: Date.now() }); }
+  catch(e) { console.warn('Eletros: erro ao guardar orçamento', e); }
+}
 
 // ════════════════════════════════════════════════
 // BASE DE DADOS
@@ -965,6 +981,7 @@ window.eletroToggleOrc = function(ref) {
     });
     if (artigo) { ES.orc.push(artigo); toast('✓ Adicionado ao orçamento'); }
   }
+  eletroGuardarOrcamento();
   atualizarBadge();
   if (ES.tab === 'catalogo')  renderCatalogoGrid();
   if (ES.tab === 'orcamento') renderOrcamento();
@@ -975,6 +992,7 @@ window.eletroToggleOrc = function(ref) {
 window.eletrosQty = function(idx, delta) {
   if (!ES.orc[idx]) return;
   ES.orc[idx].qty = Math.max(1, (ES.orc[idx].qty||1) + delta);
+  eletroGuardarOrcamento();
   renderOrcamento();
 };
 
@@ -999,6 +1017,7 @@ window.eletrosLimpar = function() {
   if (!ES.orc.length) return;
   if (confirm('Limpar todo o orçamento de eletros?')) {
     ES.orc = [];
+    eletroGuardarOrcamento();
     atualizarBadge();
     renderOrcamento();
     toast('✓ Orçamento limpo');

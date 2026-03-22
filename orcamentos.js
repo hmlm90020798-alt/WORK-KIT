@@ -5,6 +5,22 @@
 
 const ORC_COL = 'wk_orcamentos';
 
+// Helper para aceder ao Firebase já inicializado pelo main.js
+function getFirebase() {
+  const _db = window._wkDb || null;
+  // Usar as funções já importadas pelo Firebase SDK via window
+  const sdk = window._wkFirestore || {};
+  return {
+    _db,
+    _col:       sdk.collection   || (() => null),
+    _doc:       sdk.doc          || (() => null),
+    _setDoc:    sdk.setDoc       || (async () => {}),
+    _getDoc:    sdk.getDoc       || (async () => ({ exists: () => false })),
+    _getDocs:   sdk.getDocs      || (async () => ({ forEach: () => {} })),
+    _deleteDoc: sdk.deleteDoc    || (async () => {}),
+  };
+}
+
 // Estado local
 const OS = {
   lista:      [],   // todos os orçamentos
@@ -17,10 +33,9 @@ const OS = {
 // ════════════════════════════════════════════════
 async function orcCarregar() {
   try {
-    const db = window._wkDb;
-    if (!db) return;
-    const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const snap = await getDocs(collection(db, ORC_COL));
+    const { _db, _col, _doc, _setDoc, _getDoc, _getDocs, _deleteDoc } = getFirebase();
+    if (!_db) { console.warn('Orcamentos: Firebase nao disponivel'); return; }
+    const snap = await _getDocs(_col(_db, ORC_COL));
     OS.lista = [];
     snap.forEach(d => OS.lista.push({ id: d.id, ...d.data() }));
     OS.lista.sort((a, b) => (b.ts || 0) - (a.ts || 0));
@@ -29,19 +44,17 @@ async function orcCarregar() {
 
 async function orcSalvar(orc) {
   try {
-    const db = window._wkDb;
-    if (!db) return;
-    const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    await setDoc(doc(db, ORC_COL, orc.id), orc);
+    const { _db, _col, _doc, _setDoc } = getFirebase();
+    if (!_db) return;
+    await _setDoc(_doc(_db, ORC_COL, orc.id), orc);
   } catch (e) { window.wkToast?.('⚠️ Erro ao guardar orçamento'); console.error(e); }
 }
 
 async function orcApagar(id) {
   try {
-    const db = window._wkDb;
-    if (!db) return;
-    const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    await deleteDoc(doc(db, ORC_COL, id));
+    const { _db, _col, _doc, _deleteDoc } = getFirebase();
+    if (!_db) return;
+    await _deleteDoc(_doc(_db, ORC_COL, id));
     OS.lista = OS.lista.filter(o => o.id !== id);
     orcRender();
     window.wkToast?.('✓ Orçamento apagado');

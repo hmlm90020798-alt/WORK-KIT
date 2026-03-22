@@ -34,6 +34,9 @@ const _auth = getAuth(_app);
 // (resolve a race condition do window._wkDb)
 window._wkDb = _db;
 
+// Expor funções Firebase para módulos externos (orcamentos.js)
+window._wkFirestore = { doc, setDoc, getDoc, getDocs, deleteDoc, collection };
+
 // ── Collections ───────────────────────────────────────────────────
 const COL_BIB = collection(_db, 'wk_biblioteca');
 const COL_CHK = collection(_db, 'wk_checklists');
@@ -1072,6 +1075,8 @@ window.cliApagarHistorico = function() {
         cliCarregarHist(),
         moCarregarOrcamento(),
         matCarregar(),
+        eletroCarregarOrcamento(),
+        tampoCarregarCalc(),
       ]);
       setView('app');
       document.querySelector('[data-tab="assistente"]')?.classList.add('active');

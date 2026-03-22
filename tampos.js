@@ -6,7 +6,7 @@
 // ── Firebase — importado do contexto da app ─────────
 // _db é injectado via window._wkDb pelo main.js
 function getDb() { return window._wkDb || null; }
-import { doc, setDoc, getDocs, collection } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, setDoc, getDoc, getDocs, collection } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // ── Fornecedor ────────────────────────────────────
 export const ANIGRACO = {
@@ -293,6 +293,35 @@ function copiar(txt, btn) {
     window.wkToast('✓ Copiado: ' + txt);
     if (btn) { const o = btn.textContent; btn.textContent = '✓'; setTimeout(() => btn.textContent = o, 1400); }
   });
+}
+
+// ════════════════════════════════════════════════
+// PERSISTÊNCIA DO CÁLCULO
+// ════════════════════════════════════════════════
+const TAMPO_CALC_DOC = 'wk_tampos_calc';
+
+export async function tampoCarregarCalc() {
+  const db = window._wkDb; if (!db) return;
+  try {
+    const snap = await getDoc(doc(db, 'wk_estado', TAMPO_CALC_DOC));
+    if (snap.exists()) {
+      const d = snap.data();
+      // Restaurar estado da calculadora
+      if (d.calc) Object.assign(TS.calc, d.calc);
+      if (d.tab)  TS.tab = d.tab;
+    }
+  } catch(e) { console.warn('Tampos: erro ao carregar calc', e); }
+}
+
+async function tampoGuardarCalc() {
+  const db = window._wkDb; if (!db) return;
+  try {
+    await setDoc(doc(db, 'wk_estado', TAMPO_CALC_DOC), {
+      calc: TS.calc,
+      tab:  TS.tab,
+      ts:   Date.now(),
+    });
+  } catch(e) { console.warn('Tampos: erro ao guardar calc', e); }
 }
 
 // ════════════════════════════════════════════════
@@ -794,6 +823,7 @@ window.tampoAbrirCalc = function(nome, material) {
   TS.calc.material  = material;
   TS.calc.artigo    = artigo;
   TS.calc.espessura = mat.espessuras[0];
+  tampoGuardarCalc();
   if (!TS.calc.pecas.length) {
     TS.calc.pecas = [{ id: gerarIdPeca(), comp: '', larg: '0.65' }];
   }
@@ -1305,6 +1335,7 @@ function updateResumoCalc() {
 
   // Actualizar total PVP — reutilizar totalEl já declarado acima
   if (totalEl) totalEl.textContent = fmtPVP(pvpFinal);
+  tampoGuardarCalc();
 
   // Actualizar linha desconto
   const descEl = document.getElementById('resumo-pvp-desc');
