@@ -465,7 +465,6 @@ window.assLerPDF=async function(input){
   status.textContent='A ler PDF...';
   status.className='aspdf-status';
   try{
-    // Carregar pdf.js se necessario
     if(!window.pdfjsLib){
       await new Promise((res,rej)=>{
         const s=document.createElement('script');
@@ -475,7 +474,6 @@ window.assLerPDF=async function(input){
       });
       window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
-    // Ler ficheiro
     const buf=await file.arrayBuffer();
     const pdf=await window.pdfjsLib.getDocument({data:buf}).promise;
     let txt='';
@@ -484,68 +482,138 @@ window.assLerPDF=async function(input){
       const ct=await pg.getTextContent();
       txt+=ct.items.map(x=>x.str).join(' ')+'\n';
     }
-    // Filtrar secao de materiais
-    const m=txt.match(/Material a Adquirir[\s\S]{0,6000}?(?=Notas Finais|Total Ili|$)/i);
-    const textoMat=(m?m[0]:txt).substring(0,3000);
-
-    status.textContent='A identificar materiais...';
-    AS.loading=true; setBtnLoad(true);
-    document.getElementById('ass-empty').style.display='none';
-    const res=document.getElementById('ass-resultado');
-    res.style.display='';
-    res.innerHTML='<div class="asload"><div class="asdot"></div><div class="asdot"></div><div class="asdot"></div></div>';
-
-    const resp=await fetch(GROQ_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_KEY},
-      body:JSON.stringify({
-        model:GROQ_MODEL, max_tokens:4000, temperature:0.1,
-        messages:[
-          {role:'system',content:promptPDF()},
-          {role:'user',content:'Lista de materiais do PDF:\n\n'+textoMat},
-        ],
-      }),
-    });
-    const data=await resp.json();
-    const raw=data.choices?.[0]?.message?.content||'';
-    let parsed;
-    try{
-      let clean=raw.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
-      if(!clean.startsWith('{'))clean=clean.slice(clean.indexOf('{'));
-      // Tentar parse directo
-      try{ parsed=JSON.parse(clean); }
-      catch{
-        // JSON cortado — tentar fechar manualmente
-        const lastBrace=clean.lastIndexOf('}');
-        if(lastBrace>=0){
-          let attempt=clean.slice(0,lastBrace+1);
-          // Fechar arrays e objecto se necessario
-          const opens=(attempt.match(/\[/g)||[]).length-(attempt.match(/\]/g)||[]).length;
-          const objs=(attempt.match(/\{/g)||[]).length-(attempt.match(/\}/g)||[]).length;
-          attempt+=']'.repeat(Math.max(0,opens))+'}'.repeat(Math.max(0,objs));
-          parsed=JSON.parse(attempt);
-        } else { throw new Error('sem JSON'); }
-      }
-    }catch(e){throw new Error('Resposta invalida da IA: '+e.message);}
-
-    AS.resultados=parsed.artigos||[];
-    const naoEnc=parsed.nao_encontrados||[];
-    renderRes({
-      artigos:parsed.artigos||[],
-      alertas:naoEnc.length?[{nivel:'atencao',texto:'Sem correspondencia: '+naoEnc.join(', ')}]:[],
-      em_falta:[],
-      resumo:parsed.resumo||('PDF: '+file.name),
-    });
-    status.textContent='PDF lido com sucesso';
-    status.className='aspdf-status ok';
+    const m=txt.match(/Material a Adquirir[\s\S]{0,8000}?(?=Notas Finais|Total Ili|Documento Processado|$)/i);
+    const secao=m?m[0]:txt;
+    const linhas=secao.split('\n').map(l=>l.trim()).filter(l=>l.length>3);
+    const itens=parsearLinhasMaterial(linhas);
+    status.textContent=itens.length+' itens encontrados';
+    renderRevisaoPDF(itens, file.name);
     input.value='';
   }catch(e){
     status.textContent='Erro: '+e.message;
     status.className='aspdf-status err';
-    console.error('PDF erro:',e);
-  }finally{
-    AS.loading=false; setBtnLoad(false);
+    console.error(e);
   }
+};
+
+function parsearLinhasMaterial(linhas){
+  const itens=[];
+  const ignore=[/Material a Adquirir/i,/Observa/i,/Quantidade/i,/Descri/i,/^\d+\/\d+$/,/^Leroy/i,/^BCM/i,/^Rua/i,/^Tel/i,/^NIF/i];
+  const reQty=/^(.+?)\s+([\d.,]+)\s*(m2|ml|un|m|kg|L|Ml|M2|MT|ML)?\s*$/i;
+  for(const l of linhas){
+    if(ignore.some(r=>r.test(l)))continue;
+    if(l.length<4||l.length>200)continue;
+    const match=l.match(reQty);
+    let nome=l, qty=1, unid='un';
+    if(match){
+      const n=match[1].trim();
+      const q=parseFloat(match[2].replace(',','.'));
+      if(n.length>=3&&q>0&&q<100000){nome=n;qty=q;unid=match[3]||'un';}
+    }
+    if(nome.length<3)continue;
+    const corr=encontrarNoMateriais(nome);
+    itens.push({nome,qty,unid,corr,confirmado:false,excluido:false});
+  }
+  return itens;
+}
+
+function encontrarNoMateriais(desc){
+  if(!MATERIAIS_DB||!MATERIAIS_DB.length)return null;
+  const palavras=desc.toLowerCase().replace(/[^\w\s]/g,' ').split(/\s+/).filter(p=>p.length>2);
+  let melhor=null,score=0;
+  for(const a of MATERIAIS_DB){
+    if(!a.ref||!a.nome)continue;
+    const n=a.nome.toLowerCase();
+    let s=palavras.filter(p=>n.includes(p)).length;
+    if(s>score){score=s;melhor=a;}
+  }
+  return score>=1?melhor:null;
+}
+
+function renderRevisaoPDF(itens,nomeFile){
+  document.getElementById('ass-empty').style.display='none';
+  const res=document.getElementById('ass-resultado');
+  res.style.display='';
+  AS.pdfItens=itens;
+  const comCorr=itens.filter(i=>i.corr).length;
+  let h=`<div class="asres">
+    <div class="asres-topo">
+      <div class="asres-resumo">PDF: ${nomeFile}</div>
+      <div class="asres-count">${itens.length} itens | ${comCorr} com correspondencia no catalogo</div>
+    </div>
+    <div class="asalertas"><div class="asalerta asalerta-atencao"><span>i</span><span>Confirma os itens correctos e exclui os que nao se aplicam. Depois adiciona ao orcamento.</span></div></div>
+    <div class="asgrupo"><div class="asgrupo-hdr">Itens do PDF<span class="asgrupo-n">${itens.length}</span></div>`;
+
+  itens.forEach((item,idx)=>{
+    const c2=item.corr;
+    h+=`<div class="aspdf-item" id="aspdf-item-${idx}">
+      <div class="aspdf-item-orig">
+        <span class="aspdf-item-qty">${item.qty} ${item.unid}</span>
+        <span class="aspdf-item-nome">${item.nome}</span>
+      </div>
+      <div class="aspdf-item-corr">`;
+    if(c2){
+      h+=`<span class="asart-ref" onclick="window.copiarTexto('${c2.ref}',this)">${c2.ref}</span>
+          <span class="aspdf-match-nome">${c2.nome}</span>
+          ${c2.preco?`<span class="asart-preco">${Number(c2.preco).toLocaleString('pt-PT',{minimumFractionDigits:2})} EUR</span>`:''}`;
+    }else{
+      h+=`<span class="aspdf-sem-corr">Sem correspondencia — pesquisar manualmente</span>`;
+    }
+    h+=`</div>
+      <div class="aspdf-item-acoes">
+        <button class="aspdf-confirmar" id="aspdf-ok-${idx}" onclick="window.assConfirmarItem(${idx})">OK</button>
+        <button class="aspdf-excluir" onclick="window.assExcluirItem(${idx})">Excluir</button>
+      </div>
+    </div>`;
+  });
+
+  h+=`</div><div class="asacoes">
+    <button class="asacao" onclick="window.assConfirmarTodos()">Confirmar todos com correspondencia</button>
+    <button class="asacao asacao-sec" onclick="window.assAdicionarConfirmados()">Adicionar confirmados ao Orcamento</button>
+  </div></div>`;
+
+  if(!document.getElementById('aspdf-css')){
+    const st=document.createElement('style');
+    st.id='aspdf-css';
+    st.textContent='.aspdf-item{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:11px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);margin-bottom:7px;transition:all .2s}.aspdf-item.confirmado{background:rgba(40,120,60,.08);border-color:rgba(40,120,60,.25)}.aspdf-item.excluido{opacity:.25;pointer-events:none}.aspdf-item-orig{display:flex;align-items:baseline;gap:8px}.aspdf-item-qty{font-family:var(--mono);font-size:10px;color:rgba(196,97,42,.85);font-weight:700;background:rgba(196,97,42,.1);padding:1px 7px;border-radius:4px;white-space:nowrap}.aspdf-item-nome{font-size:12px;color:var(--t2)}.aspdf-item-corr{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding-left:6px;border-left:2px solid rgba(255,255,255,.07)}.aspdf-match-nome{font-size:11px;font-weight:600;color:var(--t1)}.aspdf-sem-corr{font-size:11px;color:var(--t4);font-style:italic}.aspdf-item-acoes{display:flex;gap:6px;justify-content:flex-end}.aspdf-confirmar{padding:4px 12px;border-radius:6px;background:rgba(40,120,60,.12);border:1px solid rgba(40,120,60,.25);color:rgba(100,220,120,.8);font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}.aspdf-confirmar:hover,.aspdf-confirmar.done{background:rgba(40,120,60,.25)}.aspdf-excluir{padding:4px 10px;border-radius:6px;background:rgba(192,57,43,.07);border:1px solid rgba(192,57,43,.18);color:rgba(255,140,130,.6);font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}.aspdf-excluir:hover{background:rgba(192,57,43,.18)}';
+    document.head.appendChild(st);
+  }
+  res.innerHTML=h;
+}
+
+window.assConfirmarItem=function(idx){
+  if(!AS.pdfItens)return;
+  AS.pdfItens[idx].confirmado=true;
+  const el=document.getElementById('aspdf-item-'+idx);
+  if(el)el.classList.add('confirmado');
+  const btn=document.getElementById('aspdf-ok-'+idx);
+  if(btn)btn.classList.add('done');
+};
+
+window.assExcluirItem=function(idx){
+  if(!AS.pdfItens)return;
+  AS.pdfItens[idx].excluido=true;
+  const el=document.getElementById('aspdf-item-'+idx);
+  if(el)el.classList.add('excluido');
+};
+
+window.assConfirmarTodos=function(){
+  if(!AS.pdfItens)return;
+  AS.pdfItens.forEach((_,idx)=>{
+    if(AS.pdfItens[idx].corr&&!AS.pdfItens[idx].excluido)window.assConfirmarItem(idx);
+  });
+};
+
+window.assAdicionarConfirmados=function(){
+  if(!AS.pdfItens)return;
+  let n=0;
+  AS.pdfItens.forEach(item=>{
+    if(item.confirmado&&item.corr&&!AS.orcRefs.has(item.corr.ref)){
+      window.assToggleOrc(item.corr.ref,item.corr.nome,item.corr.familia,item.corr.preco);
+      n++;
+    }
+  });
+  window.wkToast?.(n?'Adicionados '+n+' artigos ao orcamento':'Confirma pelo menos um item primeiro');
 };
 
 window.assCopiarRefs=function(){
