@@ -40,12 +40,8 @@
       <div class="app-logo"><span class="relevo">Work</span> <span class="brasa">Kit</span></div>
       <div class="app-logo-sub">Hélder Melo</div>
     </div>
-    <!-- Nav tabs -->
     <nav class="app-nav" id="app-nav">
-      <button class="nav-tab active" data-tab="assistente" onclick="window.switchTab('assistente',this)">
-        🧭 Assistente
-      </button>
-      <button class="nav-tab" data-tab="tampos" onclick="window.switchTab('tampos',this)">
+      <button class="nav-tab active" data-tab="tampos" onclick="window.switchTab('tampos',this)">
         🪨 Tampos
       </button>
       <button class="nav-tab" data-tab="eletros" onclick="window.switchTab('eletros',this)">
@@ -57,15 +53,6 @@
       <button class="nav-tab" data-tab="maoobra" onclick="window.switchTab('maoobra',this)">
         🔨 Mão de Obra
       </button>
-      <button class="nav-tab" data-tab="cliente" onclick="window.switchTab('cliente',this)">
-        🧭 Cliente
-      </button>
-      <button class="nav-tab" data-tab="orcamentos" onclick="window.switchTab('orcamentos',this)">
-        📋 Orçamentos
-      </button>
-      <button class="nav-tab" data-tab="biblioteca" onclick="window.switchTab('biblioteca',this)">
-        📚 Biblioteca
-      </button>
     </nav>
     <div class="app-header-right">
       <span class="app-sync" id="app-sync"></span>
@@ -76,53 +63,8 @@
   <!-- Conteúdo das tabs -->
   <main class="app-body">
 
-    <!-- ── TAB: ASSISTENTE ── -->
-    <div class="tab-content active" id="tab-assistente">
-      <!-- renderizado pelo assistente.js -->
-    </div>
-
-    <!-- ── TAB: ORÇAMENTOS ── -->
-    <div class="tab-content" id="tab-orcamentos">
-      <div id="orc-header"></div>
-      <div id="orc-body"></div>
-    </div>
-
-    <!-- ── TAB: BIBLIOTECA ── -->
-    <div class="tab-content" id="tab-biblioteca">
-      <div class="page-header page-header-flex">
-        <div>
-          <div class="page-titulo">Biblioteca</div>
-          <div class="page-sub">Materiais, códigos, processos e ideias — tudo pesquisável</div>
-        </div>
-        <button class="btn-pri" onclick="window.bibAbrirNovo()">+ Novo Item</button>
-      </div>
-
-      <div class="bib-toolbar">
-        <div class="search-wrap">
-          <span class="search-icon">⌕</span>
-          <input type="text" id="bib-pesquisa" class="search-input" placeholder="Pesquisar materiais, códigos, referências…" oninput="window.bibRender()">
-        </div>
-        <div class="bib-cats" id="bib-cats"></div>
-      </div>
-
-      <div class="bib-info" id="bib-info"></div>
-      <div class="bib-grid" id="bib-grid"></div>
-    </div>
-
-    <!-- ── TAB: CHECKLISTS ── -->
-    <div class="tab-content" id="tab-checklists">
-      <div class="page-header page-header-flex">
-        <div>
-          <div class="page-titulo">Checklists</div>
-          <div class="page-sub">Por tipo de obra — nunca mais esqueces um artigo obrigatório</div>
-        </div>
-        <button class="btn-pri" onclick="window.chkAbrirNovo()">+ Nova Checklist</button>
-      </div>
-      <div id="chk-content"></div>
-    </div>
-
     <!-- ── TAB: TAMPOS ── -->
-    <div class="tab-content" id="tab-tampos">
+    <div class="tab-content active" id="tab-tampos">
       <div id="tampo-header"></div>
       <div id="tampo-body"></div>
     </div>
@@ -131,6 +73,12 @@
     <div class="tab-content" id="tab-eletros">
       <div id="eletro-header"></div>
       <div id="eletro-body"></div>
+    </div>
+
+    <!-- ── TAB: MATERIAIS ── -->
+    <div class="tab-content" id="tab-materiais">
+      <div id="mat-header"></div>
+      <div id="mat-grid"></div>
     </div>
 
     <!-- ── TAB: MÃO DE OBRA ── -->
@@ -165,96 +113,7 @@
       </div>
     </div>
 
-    <!-- ── TAB: MATERIAIS ── -->
-    <div class="tab-content" id="tab-materiais">
-      <div id="mat-header"></div>
-      <div id="mat-grid"></div>
-    </div>
-
-    <!-- ── TAB: QUALIFICAÇÃO CLIENTE ── -->
-    <div class="tab-content" id="tab-cliente">
-      <div class="page-header page-header-flex">
-        <div>
-          <div class="page-titulo">Qualificação de Cliente</div>
-          <div class="page-sub">Avalia o perfil do cliente ao longo da conversa</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <input id="cli-nome" class="cli-input-rapido" placeholder="Nome do cliente">
-          <button class="btn-sec" onclick="window.cliNovo()">+ Nova Avaliação</button>
-          <button class="btn-sec" onclick="window.cliHistorico()">📊 Histórico</button>
-        </div>
-      </div>
-      <div class="cli-wrap">
-        <div class="cli-main" id="cli-main"></div>
-        <div class="cli-hist-painel" id="cli-hist-painel"></div>
-      </div>
-    </div>
-
   </main>
-</div>
-
-<!-- ══ MODAL BIBLIOTECA ══ -->
-<div class="overlay-modal" id="modal-bib">
-  <div class="modal-box modal-bib-box">
-    <div class="modal-header">
-      <div class="modal-titulo" id="modal-bib-titulo">Novo Item</div>
-      <button class="modal-close" onclick="window.bibFecharModal()">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-grid-2">
-        <div class="form-campo full">
-          <label class="form-label">Nome / Descrição *</label>
-          <input type="text" id="bib-f-nome" class="f-input" placeholder="Ex: Silicone Branco Stop Mofo Ceys">
-        </div>
-        <div class="form-campo">
-          <label class="form-label">Categoria</label>
-          <select id="bib-f-cat" class="f-select">
-            <option value="material">🗂 Material</option>
-            <option value="codigo">🔢 Código / Referência</option>
-            <option value="processo">⚙️ Processo</option>
-            <option value="ideia">💡 Ideia</option>
-            <option value="fornecedor">🏢 Fornecedor</option>
-            <option value="nota">📝 Nota</option>
-          </select>
-        </div>
-        <div class="form-campo">
-          <label class="form-label">Referência LM</label>
-          <input type="text" id="bib-f-ref" class="f-input" placeholder="Ex: 16679355">
-        </div>
-        <div class="form-campo">
-          <label class="form-label">Preço (€)</label>
-          <input type="number" id="bib-f-preco" class="f-input" placeholder="0,00" step="0.01">
-        </div>
-        <div class="form-campo">
-          <label class="form-label">Unidade</label>
-          <select id="bib-f-unidade" class="f-select">
-            <option value="un">un</option>
-            <option value="cx">cx</option>
-            <option value="m²">m²</option>
-            <option value="ml">ml</option>
-            <option value="tb">tb</option>
-            <option value="kg">kg</option>
-          </select>
-        </div>
-        <div class="form-campo">
-          <label class="form-label">Tags (separadas por vírgula)</label>
-          <input type="text" id="bib-f-tags" class="f-input" placeholder="cozinha, silicone, vedação">
-        </div>
-        <div class="form-campo full">
-          <label class="form-label">URL / Link</label>
-          <input type="url" id="bib-f-url" class="f-input" placeholder="https://www.leroymerlin.pt/…">
-        </div>
-        <div class="form-campo full">
-          <label class="form-label">Notas</label>
-          <textarea id="bib-f-notas" class="f-textarea" rows="3" placeholder="Observações, dicas de uso, alternativas…"></textarea>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-cancelar" onclick="window.bibFecharModal()">Cancelar</button>
-      <button class="btn-guardar" onclick="window.bibGuardar()">Guardar</button>
-    </div>
-  </div>
 </div>
 
 <!-- ══ TOAST ══ -->
