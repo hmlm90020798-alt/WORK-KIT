@@ -476,16 +476,35 @@ window.assLerPDF=async function(input){
     }
     const buf=await file.arrayBuffer();
     const pdf=await window.pdfjsLib.getDocument({data:buf}).promise;
-    let txt='';
+    // Extrair todos os items de texto com posição Y para agrupar por linha
+    let todosItems=[];
     for(let i=1;i<=pdf.numPages;i++){
       const pg=await pdf.getPage(i);
       const ct=await pg.getTextContent();
-      txt+=ct.items.map(x=>x.str).join(' ')+'\n';
+      const vp=await pg.getViewport({scale:1});
+      ct.items.forEach(item=>{
+        if(item.str&&item.str.trim()){
+          todosItems.push({str:item.str.trim(), y:Math.round(vp.height-item.transform[5])});
+        }
+      });
     }
-    const m=txt.match(/Material a Adquirir[\s\S]{0,8000}?(?=Notas Finais|Total Ili|Documento Processado|$)/i);
-    const secao=m?m[0]:txt;
-    const linhas=secao.split('\n').map(l=>l.trim()).filter(l=>l.length>3);
-    const itens=parsearLinhasMaterial(linhas);
+    // Agrupar items na mesma linha (mesma coordenada Y +-3px)
+    const linhasMap={};
+    todosItems.forEach(item=>{
+      const yKey=Math.round(item.y/4)*4; // tolerancia de 4px
+      if(!linhasMap[yKey])linhasMap[yKey]=[];
+      linhasMap[yKey].push(item.str);
+    });
+    const linhasOrdenadas=Object.keys(linhasMap).sort((a,b)=>Number(a)-Number(b))
+      .map(y=>linhasMap[y].join(' ').trim()).filter(l=>l.length>2);
+    // Encontrar secao "Material a Adquirir"
+    const idxMat=linhasOrdenadas.findIndex(l=>/Material a Adquirir/i.test(l));
+    const idxFim=linhasOrdenadas.findIndex((l,i)=>i>idxMat&&/Notas Finais|Total Ili|Documento Processado/i.test(l));
+    const secaoLinhas=idxMat>=0
+      ? linhasOrdenadas.slice(idxMat+1, idxFim>0?idxFim:linhasOrdenadas.length)
+      : linhasOrdenadas;
+    console.log('PDF linhas extraidas:', secaoLinhas.length, secaoLinhas.slice(0,5));
+    const itens=parsearLinhasMaterial(secaoLinhas);
     status.textContent=itens.length+' itens encontrados';
     renderRevisaoPDF(itens, file.name);
     input.value='';
