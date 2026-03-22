@@ -112,6 +112,8 @@ O Hélder descreve o projeto em linguagem natural. Podes receber:
 3. Não fazer perguntas desnecessárias — trabalha com o que tens
 4. A única pergunta útil: "módulo da placa/lava-louça tem quantos cm?" quando não for indicado
 5. Dobradiças, cestos deslizantes e sistema elevatório NÃO incluir — vêm do software 3D
+6. Guia de montagem (956630) e Push Open (956663) SÓ incluir se o projeto TEM móveis superiores. Se disser "sem superiores", "só inferiores" ou "sem móveis superiores" → NÃO incluir nenhum dos dois
+7. Fita LED (87978117) SÓ incluir se tem móveis superiores
 
 ━━━ CATÁLOGO LOCAL ━━━
 ${catalogoResumido}
@@ -323,8 +325,8 @@ async function enviar(texto) {
 function analisarContextoLocal(txt) {
   const t = txt.toLowerCase();
   return {
-    temSuperiores: /superior|cima|alto|de cima/.test(t) && !/sem superior|só inferior|apenas inferior/.test(t),
-    sóInferiores:  /só inferior|sem superior|apenas inferior/.test(t),
+    temSuperiores: /superior|cima|alto|de cima/.test(t) && !/sem superior|sem móveis superiores|só inferior|apenas inferior|sem superiores/.test(t),
+    sóInferiores:  /só inferior|sem superior|sem superiores|sem móveis superiores|apenas inferior/.test(t),
     modulo60:      /\b60\b/.test(t),
     modulo80:      /\b80\b/.test(t),
     modulo90:      /\b90\b/.test(t),
