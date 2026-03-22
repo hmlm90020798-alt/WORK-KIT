@@ -283,8 +283,22 @@ async function enviar(texto) {
     AS.historico.push({role:'assistant',content:raw});
 
     let parsed;
-    try { parsed = JSON.parse(raw.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim()); }
-    catch { throw new Error('Resposta inválida'); }
+    try {
+      // Tentar parse directo
+      let clean = raw.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+      // Se não começa com { procurar o primeiro {
+      if (!clean.startsWith('{')) {
+        const idx = clean.indexOf('{');
+        if (idx >= 0) clean = clean.slice(idx);
+      }
+      // Garantir que termina no último }
+      const last = clean.lastIndexOf('}');
+      if (last >= 0) clean = clean.slice(0, last + 1);
+      parsed = JSON.parse(clean);
+    } catch(err) {
+      console.error('Parse erro:', err, '\nRaw:', raw.substring(0, 300));
+      throw new Error('Resposta inválida da IA');
+    }
 
     // Filtrar e fazer merge
     const artIA = filtrar(parsed.artigos||[], c);
