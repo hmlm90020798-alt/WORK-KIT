@@ -9,20 +9,19 @@ import { doc, setDoc, getDoc, deleteDoc, getDocs, collection }
 
 function getDb() { return window._wkDb || null; }
 
-const ELETRO_ORC_DOC = 'wk_eletros_orcamento';
+const ELETRO_SESSION_KEY = 'wk_eletros_orcamento';
 
 export async function eletroCarregarOrcamento() {
-  const db = getDb(); if (!db) return;
   try {
-    const snap = await getDoc(doc(db, 'wk_estado', ELETRO_ORC_DOC));
-    if (snap.exists()) { ES.orc = snap.data().orc || []; atualizarBadge(); }
+    const raw = sessionStorage.getItem(ELETRO_SESSION_KEY);
+    if (raw) { ES.orc = JSON.parse(raw) || []; atualizarBadge(); }
   } catch(e) { console.warn('Eletros: erro ao carregar orçamento', e); }
 }
 
-async function eletroGuardarOrcamento() {
-  const db = getDb(); if (!db) return;
-  try { await setDoc(doc(db, 'wk_estado', ELETRO_ORC_DOC), { orc: ES.orc, ts: Date.now() }); }
-  catch(e) { console.warn('Eletros: erro ao guardar orçamento', e); }
+function eletroGuardarOrcamento() {
+  try {
+    sessionStorage.setItem(ELETRO_SESSION_KEY, JSON.stringify(ES.orc));
+  } catch(e) { console.warn('Eletros: erro ao guardar orçamento', e); }
 }
 
 // ════════════════════════════════════════════════
