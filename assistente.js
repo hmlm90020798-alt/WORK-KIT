@@ -486,7 +486,7 @@ window.assLerPDF=async function(input){
     }
     // Filtrar secao de materiais
     const m=txt.match(/Material a Adquirir[\s\S]{0,6000}?(?=Notas Finais|Total Ili|$)/i);
-    const textoMat=m?m[0]:txt.substring(0,4000);
+    const textoMat=(m?m[0]:txt).substring(0,3000);
 
     status.textContent='A identificar materiais...';
     AS.loading=true; setBtnLoad(true);
@@ -499,7 +499,7 @@ window.assLerPDF=async function(input){
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_KEY},
       body:JSON.stringify({
-        model:GROQ_MODEL, max_tokens:2000, temperature:0.1,
+        model:GROQ_MODEL, max_tokens:4000, temperature:0.1,
         messages:[
           {role:'system',content:promptPDF()},
           {role:'user',content:'Lista de materiais do PDF:\n\n'+textoMat},
@@ -512,10 +512,21 @@ window.assLerPDF=async function(input){
     try{
       let clean=raw.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
       if(!clean.startsWith('{'))clean=clean.slice(clean.indexOf('{'));
-      const last=clean.lastIndexOf('}');
-      if(last>=0)clean=clean.slice(0,last+1);
-      parsed=JSON.parse(clean);
-    }catch(e){throw new Error('Resposta invalida da IA');}
+      // Tentar parse directo
+      try{ parsed=JSON.parse(clean); }
+      catch{
+        // JSON cortado — tentar fechar manualmente
+        const lastBrace=clean.lastIndexOf('}');
+        if(lastBrace>=0){
+          let attempt=clean.slice(0,lastBrace+1);
+          // Fechar arrays e objecto se necessario
+          const opens=(attempt.match(/\[/g)||[]).length-(attempt.match(/\]/g)||[]).length;
+          const objs=(attempt.match(/\{/g)||[]).length-(attempt.match(/\}/g)||[]).length;
+          attempt+=']'.repeat(Math.max(0,opens))+'}'.repeat(Math.max(0,objs));
+          parsed=JSON.parse(attempt);
+        } else { throw new Error('sem JSON'); }
+      }
+    }catch(e){throw new Error('Resposta invalida da IA: '+e.message);}
 
     AS.resultados=parsed.artigos||[];
     const naoEnc=parsed.nao_encontrados||[];
