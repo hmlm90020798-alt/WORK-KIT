@@ -45,26 +45,26 @@
       <button class="nav-tab active" data-tab="assistente" onclick="window.switchTab('assistente',this)">
         🧭 Assistente
       </button>
-      <button class="nav-tab" data-tab="biblioteca" onclick="window.switchTab('biblioteca',this)">
-        📚 Biblioteca
-      </button>
-      <button class="nav-tab" data-tab="checklists" onclick="window.switchTab('checklists',this)">
-        ✅ Checklists
-      </button>
       <button class="nav-tab" data-tab="tampos" onclick="window.switchTab('tampos',this)">
         🪨 Tampos
       </button>
       <button class="nav-tab" data-tab="eletros" onclick="window.switchTab('eletros',this)">
         ⚡ Eletros
       </button>
-      <button class="nav-tab" data-tab="maoobra" onclick="window.switchTab('maoobra',this)">
-        🔨 Mão de Obra
-      </button>
       <button class="nav-tab" data-tab="materiais" onclick="window.switchTab('materiais',this)">
         📦 Materiais
       </button>
+      <button class="nav-tab" data-tab="maoobra" onclick="window.switchTab('maoobra',this)">
+        🔨 Mão de Obra
+      </button>
       <button class="nav-tab" data-tab="cliente" onclick="window.switchTab('cliente',this)">
         🧭 Cliente
+      </button>
+      <button class="nav-tab" data-tab="orcamentos" onclick="window.switchTab('orcamentos',this)">
+        📋 Orçamentos
+      </button>
+      <button class="nav-tab" data-tab="biblioteca" onclick="window.switchTab('biblioteca',this)">
+        📚 Biblioteca
       </button>
     </nav>
     <div class="app-header-right">
@@ -78,77 +78,13 @@
 
     <!-- ── TAB: ASSISTENTE ── -->
     <div class="tab-content active" id="tab-assistente">
-      <div class="page-header">
-        <div class="page-titulo">Assistente de Projeto</div>
-        <div class="page-sub">Descreve o projeto e recebe lista completa de materiais, mão de obra e checklist</div>
-      </div>
+      <!-- renderizado pelo assistente.js -->
+    </div>
 
-      <div class="assistente-wrap">
-        <div class="assistente-card">
-          <div class="assistente-label">Descreve o projeto em linguagem natural</div>
-          <textarea id="ass-input" class="assistente-textarea"
-            placeholder="Ex: Cozinha 12m² com instalação de móveis, tampo em Silestone e eletrodomésticos a encastrar…&#10;&#10;Ou: Renovação casa de banho — retirar banheira, instalar duche, renovar paredes e chão com cerâmica…"></textarea>
-          <div class="assistente-exemplos">
-            <span class="ass-ex" onclick="window.assExemplo(this)">🍳 Cozinha 12m² c/ instalação</span>
-            <span class="ass-ex" onclick="window.assExemplo(this)">🚿 Casa banho — banheira → duche</span>
-            <span class="ass-ex" onclick="window.assExemplo(this)">🚪 Roupeiro embutido 3m</span>
-            <span class="ass-ex" onclick="window.assExemplo(this)">🔨 Renovação WC completa</span>
-          </div>
-          <button class="assistente-btn" onclick="window.assGerar()">
-            → Gerar Lista de Materiais e Checklist
-          </button>
-        </div>
-
-        <!-- Resultado do Assistente -->
-        <div class="assistente-resultado" id="ass-resultado" style="display:none">
-          <div class="resultado-header">
-            <div class="resultado-titulo" id="ass-res-titulo">—</div>
-            <button class="resultado-fechar" onclick="document.getElementById('ass-resultado').style.display='none'">×</button>
-          </div>
-          <div class="resultado-body" id="ass-res-body"></div>
-          <div class="resultado-footer">
-            <button class="resultado-btn-sec" onclick="window.assCopiar()">📋 Copiar lista</button>
-            <button class="resultado-btn-pri" onclick="window.assExportarProjeto()">🔗 Criar Proposta →</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Dashboard de acesso rápido -->
-      <div class="ass-dashboard">
-        <div class="ass-dash-titulo">Acesso Rápido</div>
-        <div class="ass-dash-grid">
-          <div class="ass-dash-card" onclick="window.switchTab('biblioteca',document.querySelector('[data-tab=biblioteca]'))">
-            <span class="ass-dash-icon">📚</span>
-            <span class="ass-dash-nome relevo">Biblioteca</span>
-            <span class="ass-dash-desc">Materiais e códigos</span>
-          </div>
-          <div class="ass-dash-card" onclick="window.switchTab('checklists',document.querySelector('[data-tab=checklists]'))">
-            <span class="ass-dash-icon">✅</span>
-            <span class="ass-dash-nome relevo">Checklists</span>
-            <span class="ass-dash-desc">Por tipo de obra</span>
-          </div>
-          <div class="ass-dash-card" onclick="window.switchTab('tampos',document.querySelector('[data-tab=tampos]'))">
-            <span class="ass-dash-icon">🪨</span>
-            <span class="ass-dash-nome relevo">Tampos</span>
-            <span class="ass-dash-desc">Catálogo + calculadora</span>
-          </div>
-          <div class="ass-dash-card" onclick="window.switchTab('eletros',document.querySelector('[data-tab=eletros]'))">
-            <span class="ass-dash-icon">⚡</span>
-            <span class="ass-dash-nome relevo">Eletros</span>
-            <span class="ass-dash-desc">Catálogo completo</span>
-          </div>
-          <div class="ass-dash-card" onclick="window.switchTab('maoobra',document.querySelector('[data-tab=maoobra]'))">
-            <span class="ass-dash-icon">🔨</span>
-            <span class="ass-dash-nome relevo">Mão de Obra</span>
-            <span class="ass-dash-desc">Preços e códigos</span>
-          </div>
-          <div class="ass-dash-card" onclick="window.switchTab('cliente',document.querySelector('[data-tab=cliente]'))">
-            <span class="ass-dash-icon">🧭</span>
-            <span class="ass-dash-nome relevo">Qualificação</span>
-            <span class="ass-dash-desc">Perfil do cliente</span>
-          </div>
-        </div>
-      </div>
+    <!-- ── TAB: ORÇAMENTOS ── -->
+    <div class="tab-content" id="tab-orcamentos">
+      <div id="orc-header"></div>
+      <div id="orc-body"></div>
     </div>
 
     <!-- ── TAB: BIBLIOTECA ── -->

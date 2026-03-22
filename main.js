@@ -10,6 +10,7 @@ import { eletroInit, switchEletroTab, ELETRO_DB, ELETRO_ESSENCIAIS  } from './el
 import { moRender, moCarregarOrcamento, MO_SECCOES, MO_SECCAO_ORDEM  } from './maoobra.js';
 import { assistenteInit }                                              from './assistente.js';
 import { matInit, matCarregar }                                         from './materiais.js';
+import { orcInit, orcRender }                                           from './orcamentos.js';
 import { initializeApp }                                 from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, doc, setDoc, getDoc, getDocs,
          collection, deleteDoc }                         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -326,9 +327,9 @@ window.switchTab = function(tabId, btnEl) {
   const tab = document.getElementById('tab-' + tabId);
   if (tab) tab.classList.add('active');
   if (btnEl) btnEl.classList.add('active');
-  if (tabId === 'biblioteca') bibRender();
-  if (tabId === 'checklists') chkRender();
-  if (tabId === 'tampos')   tampoInit();
+  if (tabId === 'biblioteca')  bibRender();
+  if (tabId === 'orcamentos')  orcInit();
+  if (tabId === 'tampos')      tampoInit();
   if (tabId === 'eletros') {
     if (!document.getElementById('eletro-header')?.innerHTML) eletroInit();
     else switchEletroTab('catalogo');
@@ -1074,7 +1075,6 @@ window.cliApagarHistorico = function() {
       ]);
       setView('app');
       document.querySelector('[data-tab="assistente"]')?.classList.add('active');
-      assistenteInit();
       ov.remove();
     } else {
       ov.remove();
