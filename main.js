@@ -32,7 +32,8 @@ const _auth = getAuth(_app);
 
 // ── Injectar _db e _ST globalmente ANTES de qualquer módulo os usar
 // (resolve a race condition do window._wkDb)
-window._wkDb = _db;
+window._wkDb  = _db;
+window._wkApp = _app; // necessário para o proxy seguro da Cloud Function
 
 // Expor funções Firebase para módulos externos (orcamentos.js)
 window._wkFirestore = { doc, setDoc, getDoc, getDocs, deleteDoc, collection };

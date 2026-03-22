@@ -6,9 +6,17 @@
 
 import { MATERIAIS_DB } from './materiais.js';
 
-const GROQ_KEY   = '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';
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
-const GROQ_URL   = 'https://api.groq.com/openai/v1/chat/completions';
+
+// ── Proxy seguro via Cloud Function (chave Groq nunca exposta no browser)
+async function chamarGroq(messages) {
+  const { getFunctions, httpsCallable } = await import(
+    'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js'
+  );
+  const fn = httpsCallable(getFunctions(window._wkApp), 'groqProxy');
+  const result = await fn({ messages, model: GROQ_MODEL, max_tokens: 1200 });
+  return result.data;
+}
 
 // ════════════════════════════════════════════════
 // CONHECIMENTO BASE
@@ -291,15 +299,8 @@ async function enviar(texto) {
   renderHist();
 
   try {
-    const r = await fetch(GROQ_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':`Bearer ${GROQ_KEY}`},
-      body:JSON.stringify({
-        model:GROQ_MODEL, max_tokens:1200, temperature:0.15,
-        messages:[{role:'system',content:prompt()},...AS.historico],
-      }),
-    });
-    const data = await r.json();
+    const mensagens = [{role:'system',content:prompt()},...AS.historico];
+    const data = await chamarGroq(mensagens);
     const raw  = data.choices?.[0]?.message?.content || '';
     AS.historico.push({role:'assistant',content:raw});
 
