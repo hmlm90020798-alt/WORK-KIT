@@ -16,7 +16,6 @@ const GROQ_URL   = 'https://api.groq.com/openai/v1/chat/completions';
 const BASE_SEMPRE = [
   { ref:'82231846', nome:'250 Parafusos 3.5×30mm SPAX',              familia:'Fixação',     quando:'Fixação de módulos entre si e à parede' },
   { ref:'82231844', nome:'300 Parafusos 3.5×16mm SPAX',              familia:'Fixação',     quando:'Painéis traseiros e fundos de módulos' },
-  { ref:'19945982', nome:'10 Buchas D10×50mm Duopower',              familia:'Fixação',     quando:'Fixação à parede — universal em qualquer suporte' },
   { ref:'15765806', nome:'Fita Alumínio 50mm×10m Sanitop',           familia:'Selagem',     quando:'Selagem de juntas e remates' },
   { ref:'86904474', nome:'Fita Pintor Multisup Dexter 50m×48mm',     familia:'Consumíveis', quando:'Protecção de superfícies durante instalação' },
   { ref:'16353246', nome:'Silicone Coz&WC Ceys Express 280ml Tr',    familia:'Selagem',     quando:'Junta tampo-parede — transparente' },
@@ -30,9 +29,10 @@ const BASE_FORNO      = [
   { ref:'15293075', nome:'Grelha Ventilação Forno Inox 60×12.5', familia:'Ferragens', quando:'Ventilação obrigatória no módulo de forno' },
 ];
 const COND_SUPERIORES = [
-  { ref:'956630',  nome:'Guia Montagem Módulos Superiores 2000mm', familia:'Ferragens',   quando:'Suspensão de módulos superiores à parede' },
-  { ref:'956663',  nome:'Sistema Push Open p/Porta Branco',        familia:'Ferragens',   quando:'Abertura sem puxador — apenas nos superiores' },
-  { ref:'87978117',nome:'Fita LED Cutflexi 1000lm 5m Inspiro',    familia:'Iluminação',  quando:'Iluminação sob módulos superiores' },
+  { ref:'19945982', nome:'10 Buchas D10×50mm Duopower',              familia:'Fixação',   quando:'Fixação dos módulos superiores à parede' },
+  { ref:'956630',  nome:'Guia Montagem Módulos Superiores 2000mm',   familia:'Ferragens', quando:'Suspensão de módulos superiores à parede' },
+  { ref:'956663',  nome:'Sistema Push Open p/Porta Branco',          familia:'Ferragens', quando:'Abertura sem puxador — apenas nos superiores' },
+  { ref:'87978117',nome:'Fita LED Cutflexi 1000lm 5m Inspiro',      familia:'Iluminação',quando:'Iluminação sob módulos superiores' },
 ];
 const COND_VITRINE    = [{ ref:'80129470', nome:'Dobradiças 110° c/ Amort p/ Vitrine', familia:'Ferragens', quando:'Portas de vidro' }];
 const REGUAS = {
@@ -42,7 +42,7 @@ const REGUAS = {
 };
 
 // Refs que SÓ aparecem com superiores — filtrar sempre que semSup=true
-const REFS_SUPERIORES = new Set(['956630','956663','87978117']);
+const REFS_SUPERIORES = new Set(['19945982','956630','956663','87978117']);
 
 const ALERTAS_CTX = [
   { r:/silestone|dekton|granito|pedra natural|mármore/i, nivel:'critico',
@@ -105,16 +105,22 @@ function filtrar(artigos, c) {
 // PROMPT
 // ════════════════════════════════════════════════
 function prompt() {
-  const cat = MATERIAIS_DB.filter(a=>a.ref&&a.nome).map(a=>`${a.ref}|${a.nome}|${a.preco}€`).join('\n');
+  // Só artigos relevantes para cozinhas — excluir pladur, tetos, cantoneiras, etc.
+  const FAMILIAS_COZINHA = ['Fixação e Estrutura','Ferragens e Acessórios','Vedação e Selagem','Iluminação','Lava-Louça e Torneiras','Material PRO','Acabamentos e Renovação'];
+  const cat = MATERIAIS_DB
+    .filter(a => a.ref && a.nome && FAMILIAS_COZINHA.includes(a.familia))
+    .map(a => `${a.ref}|${a.nome}|${a.preco}€`).join('\n');
   return `És o assistente técnico do Hélder, vendedor de cozinhas na Leroy Merlin Viseu.
 Devolve a lista de materiais necessários para o projeto descrito.
 
 REGRAS:
-1. NUNCA inventar referências — usa só o catálogo abaixo
-2. Dobradiças, cestos, sistema elevatório → NÃO incluir (vêm do software 3D)
-3. SEM superiores (ex: "sem superiores", "só inferiores") → NÃO incluir 956630, 956663, 87978117
-4. COM superiores → incluir 956630 e 956663 como "condicional"
-5. Réguas apenas se indicada a largura do módulo da placa/lava-louça
+1. NUNCA inventar referências — usa APENAS refs do catálogo abaixo
+2. Se um artigo não existe no catálogo → devolve fonte "pesquisar", não inventes refs
+3. Dobradiças, cestos, sistema elevatório → NÃO incluir (vêm do software 3D)
+4. SEM superiores → NÃO incluir 19945982, 956630, 956663, 87978117
+5. COM superiores → incluir 19945982, 956630, 956663 como "condicional"
+6. Réguas apenas se indicada a largura do módulo da placa/lava-louça
+7. Só incluir artigos directamente relacionados com cozinhas — NÃO incluir materiais de construção, pladur, massas, perfis de tecto ou similares
 
 CATÁLOGO:
 ${cat}
