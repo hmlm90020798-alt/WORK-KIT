@@ -462,104 +462,78 @@ window.assLerPDF=async function(input){
   const file=input.files[0];
   if(!file)return;
   const status=document.getElementById('aspdf-status');
-  const lbl=document.getElementById('aspdf-txt');
   status.textContent='A ler PDF...';
   status.className='aspdf-status';
-  try {
-    // Ler PDF como ArrayBuffer e extrair texto via FileReader
-    const text=await new Promise((res,rej)=>{
-      const r=new FileReader();
-      r.onload=async e=>{
-        try {
-          // Usar pdf.js via CDN para extrair texto
-          const pdfjsLib=window['pdfjs-dist/build/pdf'];
-          if(!pdfjsLib){
-            // Carregar pdf.js dinamicamente
-            await new Promise((resolve,reject)=>{
-              const s=document.createElement('script');
-              s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-              s.onload=resolve;s.onerror=reject;
-              document.head.appendChild(s);
-            });
-          }
-          const pdf_lib=window['pdfjs-dist/build/pdf']||window.pdfjsLib;
-          if(pdf_lib&&pdf_lib.GlobalWorkerOptions){
-            pdf_lib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-          }
-          const lib=pdf_lib||window.pdfjsLib;
-          const pdf=await lib.getDocument({data:e.target.result}).promise;
-          let txt='';
-          for(let i=1;i<=pdf.numPages;i++){
-            const pg=await pdf.getPage(i);
-            const content=await pg.getTextContent();
-            txt+=content.items.map(item=>item.str).join(' ')+'\n';
-          }
-          res(txt);
-        } catch(err){rej(err);}
-      };
-      r.onerror=rej;
-      r.readAsArrayBuffer(file);
-    });
-
-    // Filtrar para a secao "Material a Adquirir"
-    const secaoMatch=text.match(/Material a Adquirir[\s\S]*?(?=Notas Finais|Total Ili|$)/i);
-    const textoMaterial=secaoMatch?secaoMatch[0]:text;
+  try{
+    // Carregar pdf.js se necessario
+    if(!window.pdfjsLib){
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        s.onload=res; s.onerror=rej;
+        document.head.appendChild(s);
+      });
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+    // Ler ficheiro
+    const buf=await file.arrayBuffer();
+    const pdf=await window.pdfjsLib.getDocument({data:buf}).promise;
+    let txt='';
+    for(let i=1;i<=pdf.numPages;i++){
+      const pg=await pdf.getPage(i);
+      const ct=await pg.getTextContent();
+      txt+=ct.items.map(x=>x.str).join(' ')+'\n';
+    }
+    // Filtrar secao de materiais
+    const m=txt.match(/Material a Adquirir[\s\S]{0,6000}?(?=Notas Finais|Total Ili|$)/i);
+    const textoMat=m?m[0]:txt.substring(0,4000);
 
     status.textContent='A identificar materiais...';
-
-    // Chamar IA com o texto extraido
-    AS.loading=true;
-    setBtnLoad(true);
+    AS.loading=true; setBtnLoad(true);
     document.getElementById('ass-empty').style.display='none';
-    const res2=document.getElementById('ass-resultado');
-    res2.style.display='';
-    res2.innerHTML='<div class="asload"><div class="asdot"></div><div class="asdot"></div><div class="asdot"></div></div>';
+    const res=document.getElementById('ass-resultado');
+    res.style.display='';
+    res.innerHTML='<div class="asload"><div class="asdot"></div><div class="asdot"></div><div class="asdot"></div></div>';
 
-    const response=await fetch(GROQ_URL,{
+    const resp=await fetch(GROQ_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_KEY},
       body:JSON.stringify({
-        model:GROQ_MODEL,max_tokens:2000,temperature:0.1,
+        model:GROQ_MODEL, max_tokens:2000, temperature:0.1,
         messages:[
           {role:'system',content:promptPDF()},
-          {role:'user',content:'Lista de materiais do PDF:
-
-'+textoMaterial.substring(0,4000)},
+          {role:'user',content:'Lista de materiais do PDF:\n\n'+textoMat},
         ],
       }),
     });
-    const data=await response.json();
+    const data=await resp.json();
     const raw=data.choices?.[0]?.message?.content||'';
-
     let parsed;
-    try {
-      let clean=raw.replace(/```json
-?/g,'').replace(/```
-?/g,'').trim();
+    try{
+      let clean=raw.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
       if(!clean.startsWith('{'))clean=clean.slice(clean.indexOf('{'));
       const last=clean.lastIndexOf('}');
       if(last>=0)clean=clean.slice(0,last+1);
       parsed=JSON.parse(clean);
-    } catch(err){ throw new Error('Resposta invalida da IA'); }
+    }catch(e){throw new Error('Resposta invalida da IA');}
 
     AS.resultados=parsed.artigos||[];
+    const naoEnc=parsed.nao_encontrados||[];
     renderRes({
       artigos:parsed.artigos||[],
-      alertas:parsed.nao_encontrados?.length?[{nivel:'atencao',texto:'Sem correspondencia no catalogo: '+parsed.nao_encontrados.join(', ')}]:[],
+      alertas:naoEnc.length?[{nivel:'atencao',texto:'Sem correspondencia: '+naoEnc.join(', ')}]:[],
       em_falta:[],
-      resumo:parsed.resumo||'Lista de materiais do PDF '+file.name,
+      resumo:parsed.resumo||('PDF: '+file.name),
     });
-
     status.textContent='PDF lido com sucesso';
     status.className='aspdf-status ok';
     input.value='';
-  } catch(e){
+  }catch(e){
     status.textContent='Erro: '+e.message;
     status.className='aspdf-status err';
     console.error('PDF erro:',e);
-  } finally {
-    AS.loading=false;
-    setBtnLoad(false);
+  }finally{
+    AS.loading=false; setBtnLoad(false);
   }
 };
 
