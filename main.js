@@ -5,8 +5,8 @@
 //      persistentes · wkConfirm modal nativo
 // ════════════════════════════════════════════════
 
-import { tampoInit, switchTampoTab, TAMPOS_DB, ANIGRACO, TRANSPORTE } from './tampos.js';
-import { eletroInit, switchEletroTab, ELETRO_DB, ELETRO_ESSENCIAIS  } from './eletros.js';
+import { tampoInit, switchTampoTab, TAMPOS_DB, ANIGRACO, TRANSPORTE, tampoCarregarCalc } from './tampos.js';
+import { eletroInit, switchEletroTab, ELETRO_DB, ELETRO_ESSENCIAIS, eletroCarregarOrcamento } from './eletros.js';
 import { moRender, moCarregarOrcamento, MO_SECCOES, MO_SECCAO_ORDEM  } from './maoobra.js';
 import { assistenteInit }                                              from './assistente.js';
 import { matInit, matCarregar }                                         from './materiais.js';
