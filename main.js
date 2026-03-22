@@ -187,6 +187,8 @@ function mostrarErroDB(e) {
 
   onAuthStateChanged(_auth, async user => {
     if (user) {
+      // Forçar refresh do token para garantir que o Firestore o reconhece
+      await user.getIdToken(true);
       // Carregar dados essenciais
       await Promise.all([
         moCarregarOrcamento(),
