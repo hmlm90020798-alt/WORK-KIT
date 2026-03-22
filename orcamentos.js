@@ -1,69 +1,46 @@
 // ════════════════════════════════════════════════
 // orcamentos.js · Work Kit · Hélder Melo
-// Criação, registo e exportação de orçamentos
 // ════════════════════════════════════════════════
+
+import { doc, setDoc, getDocs, deleteDoc, collection }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const ORC_COL = 'wk_orcamentos';
+const db = () => window._wkDb;
+const OS = { lista: [], ok: false };
 
-// Helper para aceder ao Firebase já inicializado pelo main.js
-function getFirebase() {
-  const _db = window._wkDb || null;
-  // Usar as funções já importadas pelo Firebase SDK via window
-  const sdk = window._wkFirestore || {};
-  return {
-    _db,
-    _col:       sdk.collection   || (() => null),
-    _doc:       sdk.doc          || (() => null),
-    _setDoc:    sdk.setDoc       || (async () => {}),
-    _getDoc:    sdk.getDoc       || (async () => ({ exists: () => false })),
-    _getDocs:   sdk.getDocs      || (async () => ({ forEach: () => {} })),
-    _deleteDoc: sdk.deleteDoc    || (async () => {}),
-  };
-}
-
-// Estado local
-const OS = {
-  lista:      [],   // todos os orçamentos
-  editId:     null, // id em edição
-  detalheId:  null, // id no painel de detalhe
-};
-
-// ════════════════════════════════════════════════
-// FIREBASE
-// ════════════════════════════════════════════════
-async function orcCarregar() {
+// ── Firebase ──────────────────────────────────
+async function carregar() {
+  if (!db()) return;
   try {
-    const { _db, _col, _doc, _setDoc, _getDoc, _getDocs, _deleteDoc } = getFirebase();
-    if (!_db) { console.warn('Orcamentos: Firebase nao disponivel'); return; }
-    const snap = await _getDocs(_col(_db, ORC_COL));
+    const snap = await getDocs(collection(db(), ORC_COL));
     OS.lista = [];
     snap.forEach(d => OS.lista.push({ id: d.id, ...d.data() }));
-    OS.lista.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-  } catch (e) { console.warn('Orçamentos: erro ao carregar', e); }
+    OS.lista.sort((a, b) => (b.ts||0) - (a.ts||0));
+    OS.ok = true;
+  } catch(e) { console.warn('Orc carregar:', e); }
 }
 
-async function orcSalvar(orc) {
-  try {
-    const { _db, _col, _doc, _setDoc } = getFirebase();
-    if (!_db) return;
-    await _setDoc(_doc(_db, ORC_COL, orc.id), orc);
-  } catch (e) { window.wkToast?.('⚠️ Erro ao guardar orçamento'); console.error(e); }
+async function salvar(o) {
+  if (!db()) return;
+  try { await setDoc(doc(db(), ORC_COL, o.id), o); }
+  catch(e) { window.wkToast?.('Erro ao guardar'); }
 }
 
-async function orcApagar(id) {
-  try {
-    const { _db, _col, _doc, _deleteDoc } = getFirebase();
-    if (!_db) return;
-    await _deleteDoc(_doc(_db, ORC_COL, id));
-    OS.lista = OS.lista.filter(o => o.id !== id);
-    orcRender();
-    window.wkToast?.('✓ Orçamento apagado');
-  } catch (e) { window.wkToast?.('⚠️ Erro ao apagar'); }
+async function apagar(id) {
+  if (!db()) return;
+  try { await deleteDoc(doc(db(), ORC_COL, id)); }
+  catch(e) { window.wkToast?.('Erro ao apagar'); }
 }
 
-// ════════════════════════════════════════════════
-// RENDER PRINCIPAL
-// ════════════════════════════════════════════════
+// ── Init ──────────────────────────────────────
+export async function orcInit() {
+  injectCSS();
+  if (!OS.ok) await carregar();
+  orcRender();
+}
+
+// ── Render lista ──────────────────────────────
 export function orcRender() {
   const hdr = document.getElementById('orc-header');
   const bdy = document.getElementById('orc-body');
@@ -72,395 +49,250 @@ export function orcRender() {
   hdr.innerHTML = `
     <div class="page-header page-header-flex">
       <div>
-        <div class="page-titulo">Orçamentos</div>
-        <div class="page-sub">Regista, acompanha e exporta todos os orçamentos de projecto</div>
+        <div class="page-titulo">Orcamentos</div>
+        <div class="page-sub">Cria, regista e exporta orcamentos de projecto</div>
       </div>
-      <button class="btn-pri" onclick="window.orcAbrirNovo()">+ Novo Orçamento</button>
+      <button class="btn-pri" onclick="window.orcNovo()">+ Novo Orcamento</button>
     </div>`;
 
   if (!OS.lista.length) {
-    bdy.innerHTML = `
-      <div style="text-align:center;padding:60px 20px;color:var(--t4)">
-        <div style="font-size:36px;margin-bottom:12px;opacity:.3">📋</div>
-        <div style="font-family:var(--serif);font-size:16px;color:var(--t3);margin-bottom:6px">Sem orçamentos ainda</div>
-        <div style="font-size:12px">Cria o primeiro orçamento ou regista um existente do Winner</div>
-      </div>`;
+    bdy.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--t4)">
+      <div style="font-size:36px;opacity:.25;margin-bottom:12px">📋</div>
+      <div style="font-family:var(--serif);font-size:16px;color:var(--t3);margin-bottom:6px">Sem orcamentos</div>
+      <div style="font-size:12px">Cria o primeiro orcamento</div>
+    </div>`;
     return;
   }
 
-  bdy.innerHTML = `
-    <div class="orc-grid">
-      ${OS.lista.map(o => orcCard(o)).join('')}
-    </div>`;
+  bdy.innerHTML = `<div class="orc-grid">${OS.lista.map(card).join('')}</div>`;
 }
 
-function orcCard(o) {
-  const total   = calcTotal(o);
-  const estado  = o.estado || 'rascunho';
-  const cores   = { rascunho:'rgba(139,105,20,.15)', enviado:'rgba(42,90,154,.15)', aceite:'rgba(40,120,60,.15)', perdido:'rgba(192,57,43,.12)' };
-  const bordas  = { rascunho:'rgba(139,105,20,.3)',  enviado:'rgba(42,90,154,.3)',  aceite:'rgba(40,120,60,.3)',  perdido:'rgba(192,57,43,.25)' };
-  const textos  = { rascunho:'rgba(255,220,120,.8)', enviado:'rgba(120,170,255,.8)',aceite:'rgba(100,220,120,.8)',perdido:'rgba(255,140,130,.7)' };
-  const labels  = { rascunho:'Rascunho', enviado:'Enviado', aceite:'Aceite', perdido:'Perdido' };
-
-  return `
-    <div class="orc-card" onclick="window.orcAbrirDetalhe('${o.id}')">
-      <div class="orc-card-topo">
-        <div class="orc-card-num">${o.num || '—'}</div>
-        <span class="orc-estado" style="background:${cores[estado]};border:1px solid ${bordas[estado]};color:${textos[estado]}">${labels[estado]}</span>
-      </div>
-      <div class="orc-card-cliente">${o.cliente || 'Cliente'}</div>
-      <div class="orc-card-data">${o.data || '—'}</div>
-      <div class="orc-card-total">${fmt(total)}</div>
-      <div class="orc-card-acoes" onclick="event.stopPropagation()">
-        <button class="bib-card-btn" onclick="window.orcEditar('${o.id}')" title="Editar">✎</button>
-        <button class="bib-card-btn" onclick="window.orcExportar('${o.id}')" title="Exportar">⎘</button>
-        <button class="bib-card-btn bib-card-btn-del" onclick="window.wkConfirm('Apagar orçamento?',()=>orcApagar('${o.id}'))" title="Apagar">×</button>
-      </div>
-    </div>`;
-}
-
-function calcTotal(o) {
+function total(o) {
   let t = 0;
-  (o.linhas_mobiliario  || []).forEach(l => t += (l.qty||1)*(l.preco||0));
-  (o.linhas_maoobra     || []).forEach(l => t += (l.qty||1)*(l.preco||0));
-  (o.linhas_eletros     || []).forEach(l => t += (l.qty||1)*(l.preco||0));
-  if (o.tampo_preco)   t += parseFloat(o.tampo_preco)||0;
+  ['linhas_mobiliario','linhas_eletros','linhas_maoobra','linhas_materiais'].forEach(k => {
+    (o[k]||[]).forEach(l => t += parseFloat(l.preco)||0);
+  });
+  t += parseFloat(o.tampo_preco)||0;
   return t;
 }
 
 function fmt(v) {
-  return isNaN(v) ? '—' : v.toLocaleString('pt-PT', { minimumFractionDigits:2, maximumFractionDigits:2 }) + ' €';
+  return (v||0).toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' EUR';
 }
 
-// ════════════════════════════════════════════════
-// MODAL — NOVO / EDITAR
-// ════════════════════════════════════════════════
-export function orcAbrirNovo() {
-  OS.editId = null;
-  renderModal({});
+const COR_ESTADO = {
+  rascunho:'rgba(139,105,20,.12);border:1px solid rgba(139,105,20,.28);color:rgba(255,210,100,.8)',
+  enviado: 'rgba(42,90,154,.12);border:1px solid rgba(42,90,154,.28);color:rgba(120,170,255,.8)',
+  aceite:  'rgba(40,120,60,.12);border:1px solid rgba(40,120,60,.28);color:rgba(100,210,120,.8)',
+  perdido: 'rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.25);color:rgba(255,140,130,.7)',
+};
+const LABEL_ESTADO = { rascunho:'Rascunho', enviado:'Enviado', aceite:'Aceite', perdido:'Perdido' };
+
+function card(o) {
+  const t = total(o);
+  const e = o.estado||'rascunho';
+  const cor = COR_ESTADO[e]||COR_ESTADO.rascunho;
+  return `<div class="orc-card" onclick="window.orcDetalhe('${o.id}')">
+    <div class="orc-card-topo">
+      <span class="orc-card-num">${o.num?'No '+o.num:'—'}</span>
+      <span class="orc-estado" style="background:${cor}">${LABEL_ESTADO[e]}</span>
+    </div>
+    <div class="orc-card-cliente">${o.cliente||'Cliente'}</div>
+    <div class="orc-card-data">${o.data?new Date(o.data).toLocaleDateString('pt-PT'):'—'}</div>
+    ${o.notas?`<div class="orc-card-notas">${o.notas.substring(0,55)}${o.notas.length>55?'...':''}</div>`:''}
+    <div class="orc-card-total">${fmt(t*1.23)}</div>
+    <div class="orc-card-acoes" onclick="event.stopPropagation()">
+      <button class="bib-card-btn" onclick="window.orcEditar('${o.id}')" title="Editar">✎</button>
+      <button class="bib-card-btn" onclick="window.orcExportar('${o.id}')" title="Copiar">⎘</button>
+      <button class="bib-card-btn bib-card-btn-del" onclick="window.wkConfirm('Apagar?',()=>window._orcApagar('${o.id}'))">×</button>
+    </div>
+  </div>`;
 }
 
-export function orcEditar(id) {
-  const o = OS.lista.find(x => x.id === id);
-  if (!o) return;
-  OS.editId = id;
-  renderModal(o);
-}
-
-function renderModal(o) {
-  // Remover modal anterior se existir
+// ── Modal ─────────────────────────────────────
+function modal(o) {
   document.getElementById('orc-modal')?.remove();
+  const v = (k,fb='') => o[k]!==undefined?o[k]:fb;
+  const l0 = k => (o[k]||[{}])[0]||{};
 
-  const estados = ['rascunho','enviado','aceite','perdido'];
-  const m = document.createElement('div');
-  m.id = 'orc-modal';
-  m.className = 'overlay-modal active';
-  m.innerHTML = `
-    <div class="modal-box" style="max-width:680px;width:95vw;max-height:90vh;overflow-y:auto">
-      <div class="modal-header">
-        <div class="modal-titulo">${OS.editId ? 'Editar Orçamento' : 'Novo Orçamento'}</div>
-        <button class="modal-close" onclick="document.getElementById('orc-modal').remove()">×</button>
+  const sec = (titulo,key,linha) => `<div style="display:flex;flex-direction:column;gap:5px">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)">${titulo}</div>
+    <div style="display:flex;gap:8px">
+      <input class="f-input" style="flex:2" id="of-${key}-desc" placeholder="Descricao" value="${(linha.desc||'').replace(/"/g,'&quot;')}">
+      <input class="f-input" style="flex:0 0 110px" id="of-${key}-preco" type="number" placeholder="EUR s/IVA" step="0.01" value="${linha.preco||''}">
+    </div>
+  </div>`;
+
+  const el = document.createElement('div');
+  el.id = 'orc-modal';
+  el.className = 'overlay-modal active';
+  el.innerHTML = `<div class="modal-box" style="max-width:640px;width:95vw;max-height:90vh;overflow-y:auto">
+    <div class="modal-header">
+      <div class="modal-titulo">${o.id?'Editar Orcamento':'Novo Orcamento'}</div>
+      <button class="modal-close" onclick="document.getElementById('orc-modal').remove()">x</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid-2">
+        <div class="form-campo"><label class="form-label">No Orcamento</label>
+          <input id="of-num" class="f-input" placeholder="Ex: 207455" value="${v('num')}"></div>
+        <div class="form-campo"><label class="form-label">Data</label>
+          <input id="of-data" class="f-input" type="date" value="${v('data',new Date().toISOString().slice(0,10))}"></div>
+        <div class="form-campo full"><label class="form-label">Cliente *</label>
+          <input id="of-cliente" class="f-input" placeholder="Nome do cliente" value="${v('cliente')}"></div>
+        <div class="form-campo full"><label class="form-label">Notas</label>
+          <textarea id="of-notas" class="f-textarea" rows="2" placeholder="Ex: Cozinha Tokyo Branco 12ml...">${v('notas')}</textarea></div>
+        <div class="form-campo"><label class="form-label">Estado</label>
+          <select id="of-estado" class="f-select">
+            ${['rascunho','enviado','aceite','perdido'].map(s=>`<option value="${s}" ${v('estado','rascunho')===s?'selected':''}>${LABEL_ESTADO[s]}</option>`).join('')}
+          </select></div>
+        <div class="form-campo"><label class="form-label">Ref. PC Winner</label>
+          <input id="of-pc" class="f-input" placeholder="Referencia 3D" value="${v('pc')}"></div>
       </div>
-      <div class="modal-body">
-
-        <!-- Info básica -->
-        <div class="form-grid-2">
-          <div class="form-campo">
-            <label class="form-label">Nº Orçamento</label>
-            <input id="of-num" class="f-input" placeholder="Ex: 207455" value="${o.num||''}">
-          </div>
-          <div class="form-campo">
-            <label class="form-label">Data</label>
-            <input id="of-data" type="date" class="f-input" value="${o.data||new Date().toISOString().slice(0,10)}">
-          </div>
-          <div class="form-campo full">
-            <label class="form-label">Cliente</label>
-            <input id="of-cliente" class="f-input" placeholder="Nome do cliente" value="${o.cliente||''}">
-          </div>
-          <div class="form-campo full">
-            <label class="form-label">Descrição / Notas</label>
-            <textarea id="of-notas" class="f-textarea" rows="2" placeholder="Ex: Cozinha Tokyo Branco, 12ml, tampo Dekton...">${o.notas||''}</textarea>
-          </div>
-          <div class="form-campo">
-            <label class="form-label">Estado</label>
-            <select id="of-estado" class="f-select">
-              ${estados.map(e=>`<option value="${e}" ${(o.estado||'rascunho')===e?'selected':''}>${e.charAt(0).toUpperCase()+e.slice(1)}</option>`).join('')}
-            </select>
-          </div>
-          <div class="form-campo">
-            <label class="form-label">Referência PC (Winner)</label>
-            <input id="of-pc" class="f-input" placeholder="Ref. do projeto 3D" value="${o.pc||''}">
-          </div>
-        </div>
-
-        <!-- Secções de valor -->
-        <div style="margin-top:18px;display:flex;flex-direction:column;gap:10px">
-
-          <div class="orc-sec">
-            <div class="orc-sec-titulo">Mobiliário (cozinha Winner)</div>
-            <div class="orc-sec-row">
-              <input class="f-input" style="flex:2" id="of-mob-desc" placeholder="Descrição (ex: Cozinha Tokyo Branco 12ml)">
-              <input class="f-input" style="flex:1;max-width:100px" id="of-mob-preco" type="number" placeholder="€" step="0.01" value="${(o.linhas_mobiliario||[{}])[0]?.preco||''}">
-            </div>
-          </div>
-
-          <div class="orc-sec">
-            <div class="orc-sec-titulo">Tampo</div>
-            <div class="orc-sec-row">
-              <input class="f-input" style="flex:2" id="of-tam-desc" placeholder="Ex: Dekton Nacre 2cm, 4.2m²" value="${o.tampo_desc||''}">
-              <input class="f-input" style="flex:1;max-width:100px" id="of-tam-preco" type="number" placeholder="€" step="0.01" value="${o.tampo_preco||''}">
-            </div>
-          </div>
-
-          <div class="orc-sec">
-            <div class="orc-sec-titulo">Eletrodomésticos</div>
-            <div class="orc-sec-row">
-              <input class="f-input" style="flex:2" id="of-ele-desc" placeholder="Ex: Forno AEG + Placa Indução + Exaustor">
-              <input class="f-input" style="flex:1;max-width:100px" id="of-ele-preco" type="number" placeholder="€" step="0.01" value="${(o.linhas_eletros||[{}])[0]?.preco||''}">
-            </div>
-          </div>
-
-          <div class="orc-sec">
-            <div class="orc-sec-titulo">Mão de Obra</div>
-            <div class="orc-sec-row">
-              <input class="f-input" style="flex:2" id="of-mo-desc" placeholder="Ex: Instalação 11ml + lava-louça + eletros">
-              <input class="f-input" style="flex:1;max-width:100px" id="of-mo-preco" type="number" placeholder="€" step="0.01" value="${(o.linhas_maoobra||[{}])[0]?.preco||''}">
-            </div>
-          </div>
-
-          <div class="orc-sec">
-            <div class="orc-sec-titulo">Materiais</div>
-            <div class="orc-sec-row">
-              <input class="f-input" style="flex:2" id="of-mat-desc" placeholder="Ex: Parafusos, silicone, buchas, fita LED...">
-              <input class="f-input" style="flex:1;max-width:100px" id="of-mat-preco" type="number" placeholder="€" step="0.01" value="${(o.linhas_materiais||[{}])[0]?.preco||''}">
-            </div>
-          </div>
-
-          <!-- Total calculado -->
-          <div id="of-total-wrap" style="padding:12px 14px;border-radius:10px;background:rgba(196,97,42,.08);border:1px solid rgba(196,97,42,.15);display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:12px;font-weight:700;color:var(--t2)">Total c/ IVA (23%)</span>
-            <span id="of-total" style="font-family:var(--mono);font-size:18px;font-weight:800;color:rgba(255,190,152,.9)">—</span>
-          </div>
+      <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px">
+        ${sec('Mobiliario (KC)','mob',l0('linhas_mobiliario'))}
+        ${sec('Tampo','tam',{desc:v('tampo_desc'),preco:v('tampo_preco')})}
+        ${sec('Eletrodomesticos','ele',l0('linhas_eletros'))}
+        ${sec('Mao de Obra','mo',l0('linhas_maoobra'))}
+        ${sec('Materiais','mat',l0('linhas_materiais'))}
+        <div style="padding:12px 14px;border-radius:10px;background:rgba(196,97,42,.08);border:1px solid rgba(196,97,42,.15);display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:12px;font-weight:700;color:var(--t2)">Total c/ IVA 23%</span>
+          <span id="of-total" style="font-family:var(--mono);font-size:17px;font-weight:800;color:rgba(255,190,152,.95)">—</span>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn-cancelar" onclick="document.getElementById('orc-modal').remove()">Cancelar</button>
-        <button class="btn-guardar" onclick="window.orcGuardar()">Guardar</button>
-      </div>
-    </div>`;
-  document.body.appendChild(m);
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancelar" onclick="document.getElementById('orc-modal').remove()">Cancelar</button>
+      <button class="btn-guardar" onclick="window._orcGuardar('${o.id||''}')">Guardar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
 
-  // Preencher desc das linhas se existir
-  if (o.linhas_mobiliario?.[0]?.desc) document.getElementById('of-mob-desc').value = o.linhas_mobiliario[0].desc;
-  if (o.linhas_eletros?.[0]?.desc)    document.getElementById('of-ele-desc').value = o.linhas_eletros[0].desc;
-  if (o.linhas_maoobra?.[0]?.desc)    document.getElementById('of-mo-desc').value  = o.linhas_maoobra[0].desc;
-  if (o.linhas_materiais?.[0]?.desc)  document.getElementById('of-mat-desc').value = o.linhas_materiais[0].desc;
-
-  // Calcular total ao vivo
-  ['of-mob-preco','of-tam-preco','of-ele-preco','of-mo-preco','of-mat-preco'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', atualizarTotal);
+  ['mob','tam','ele','mo','mat'].forEach(k => {
+    document.getElementById('of-'+k+'-preco')?.addEventListener('input', calcModalTotal);
   });
-  atualizarTotal();
-
-  // CSS extra para secções
-  if (!document.getElementById('orc-modal-css')) {
-    const st = document.createElement('style');
-    st.id = 'orc-modal-css';
-    st.textContent = `.orc-sec{display:flex;flex-direction:column;gap:6px}.orc-sec-titulo{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4)}.orc-sec-row{display:flex;gap:8px;align-items:center}`;
-    document.head.appendChild(st);
-  }
+  calcModalTotal();
 }
 
-function atualizarTotal() {
-  const vals = ['of-mob-preco','of-tam-preco','of-ele-preco','of-mo-preco','of-mat-preco']
-    .map(id => parseFloat(document.getElementById(id)?.value)||0);
-  const semIVA = vals.reduce((a,b)=>a+b,0);
-  const comIVA = semIVA * 1.23;
+function calcModalTotal() {
+  const t = ['mob','tam','ele','mo','mat'].reduce((s,k)=>s+(parseFloat(document.getElementById('of-'+k+'-preco')?.value)||0),0);
   const el = document.getElementById('of-total');
-  if (el) el.textContent = comIVA > 0 ? comIVA.toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2})+' €' : '—';
+  if (el) el.textContent = t>0 ? fmt(t*1.23) : '—';
 }
 
-// ════════════════════════════════════════════════
-// GUARDAR
-// ════════════════════════════════════════════════
-export function orcGuardar() {
-  const g = id => document.getElementById(id)?.value?.trim()||'';
+// ── Guardar ───────────────────────────────────
+window._orcGuardar = async function(editId) {
+  const g = id => (document.getElementById(id)?.value||'').trim();
   const n = id => parseFloat(document.getElementById(id)?.value)||0;
+  if (!g('of-cliente')) { window.wkToast?.('Nome do cliente obrigatorio'); return; }
 
-  const id  = OS.editId || (Date.now().toString(36)+Math.random().toString(36).slice(2,6));
-  const orc = {
-    id,
-    num:     g('of-num'),
-    data:    g('of-data'),
-    cliente: g('of-cliente'),
-    notas:   g('of-notas'),
-    estado:  g('of-estado')||'rascunho',
-    pc:      g('of-pc'),
-    tampo_desc:  g('of-tam-desc'),
-    tampo_preco: n('of-tam-preco'),
-    linhas_mobiliario: g('of-mob-desc')||n('of-mob-preco') ? [{ desc:g('of-mob-desc'), preco:n('of-mob-preco'), qty:1 }] : [],
-    linhas_eletros:    g('of-ele-desc')||n('of-ele-preco') ? [{ desc:g('of-ele-desc'), preco:n('of-ele-preco'), qty:1 }] : [],
-    linhas_maoobra:    g('of-mo-desc') ||n('of-mo-preco')  ? [{ desc:g('of-mo-desc'),  preco:n('of-mo-preco'),  qty:1 }] : [],
-    linhas_materiais:  g('of-mat-desc')||n('of-mat-preco') ? [{ desc:g('of-mat-desc'), preco:n('of-mat-preco'), qty:1 }] : [],
-    ts: Date.now(),
+  const id = editId || (Date.now().toString(36)+Math.random().toString(36).slice(2,5));
+  const o = {
+    id, ts:Date.now(),
+    num:g('of-num'), data:g('of-data'), cliente:g('of-cliente'),
+    notas:g('of-notas'), estado:g('of-estado')||'rascunho', pc:g('of-pc'),
+    tampo_desc:g('of-tam-desc'), tampo_preco:n('of-tam-preco'),
+    linhas_mobiliario: g('of-mob-desc')||n('of-mob-preco')?[{desc:g('of-mob-desc'),preco:n('of-mob-preco')}]:[],
+    linhas_eletros:    g('of-ele-desc')||n('of-ele-preco')?[{desc:g('of-ele-desc'),preco:n('of-ele-preco')}]:[],
+    linhas_maoobra:    g('of-mo-desc') ||n('of-mo-preco') ?[{desc:g('of-mo-desc'), preco:n('of-mo-preco')} ]:[],
+    linhas_materiais:  g('of-mat-desc')||n('of-mat-preco')?[{desc:g('of-mat-desc'),preco:n('of-mat-preco')}]:[],
   };
-
-  if (!orc.cliente) { window.wkToast?.('⚠️ Nome do cliente obrigatório'); return; }
-
-  if (OS.editId) {
-    const idx = OS.lista.findIndex(x => x.id === id);
-    if (idx >= 0) OS.lista[idx] = orc; else OS.lista.unshift(orc);
-  } else {
-    OS.lista.unshift(orc);
-  }
-
-  orcSalvar(orc);
+  const idx = OS.lista.findIndex(x=>x.id===id);
+  if (idx>=0) OS.lista[idx]=o; else OS.lista.unshift(o);
+  await salvar(o);
   document.getElementById('orc-modal')?.remove();
   orcRender();
-  window.wkToast?.('✓ Orçamento guardado');
-}
+  window.wkToast?.('Orcamento guardado');
+};
 
-// ════════════════════════════════════════════════
-// DETALHE
-// ════════════════════════════════════════════════
-export function orcAbrirDetalhe(id) {
-  const o = OS.lista.find(x => x.id === id);
-  if (!o) return;
+// ── Apagar ────────────────────────────────────
+window._orcApagar = async function(id) {
+  await apagar(id);
+  OS.lista = OS.lista.filter(x=>x.id!==id);
+  orcRender();
+  window.wkToast?.('Orcamento apagado');
+};
 
-  document.getElementById('orc-modal-det')?.remove();
-
-  const total    = calcTotal(o);
-  const semIVA   = total;
-  const comIVA   = total * 1.23;
-
-  const linhaHtml = (titulo, linhas) => {
+// ── Detalhe ───────────────────────────────────
+function detalhe(o) {
+  document.getElementById('orc-det')?.remove();
+  const t = total(o);
+  const secH = (tit,linhas) => {
     if (!linhas?.length) return '';
-    return `<div class="orc-det-sec">
-      <div class="orc-det-sec-titulo">${titulo}</div>
-      ${linhas.map(l=>`<div class="orc-det-linha">
-        <span style="flex:1">${l.desc||l.nome||'—'}</span>
-        <span style="font-family:var(--mono);font-size:12px;color:var(--t3)">${fmt((l.qty||1)*(l.preco||0))}</span>
-      </div>`).join('')}
-    </div>`;
+    return `<div style="margin-bottom:13px"><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,.06)">${tit}</div>
+    ${linhas.map(l=>`<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:var(--t2);border-bottom:1px solid rgba(255,255,255,.04)"><span>${l.desc||l.nome||'—'}</span><span style="font-family:var(--mono);color:var(--t3)">${fmt(l.preco||0)}</span></div>`).join('')}</div>`;
   };
-
-  const m = document.createElement('div');
-  m.id = 'orc-modal-det';
-  m.className = 'overlay-modal active';
-  m.innerHTML = `
-    <div class="modal-box" style="max-width:620px;width:95vw;max-height:90vh;overflow-y:auto">
-      <div class="modal-header">
-        <div>
-          <div class="modal-titulo">Orçamento ${o.num||''}</div>
-          <div style="font-size:11px;color:var(--t4);margin-top:2px">${o.cliente||''} · ${o.data||''}</div>
-        </div>
-        <button class="modal-close" onclick="document.getElementById('orc-modal-det').remove()">×</button>
+  const el = document.createElement('div');
+  el.id = 'orc-det';
+  el.className = 'overlay-modal active';
+  el.innerHTML = `<div class="modal-box" style="max-width:560px;width:95vw;max-height:90vh;overflow-y:auto">
+    <div class="modal-header">
+      <div>
+        <div class="modal-titulo">${o.num?'Orcamento No '+o.num:'Orcamento'}</div>
+        <div style="font-size:11px;color:var(--t4);margin-top:2px">${o.cliente||''} · ${o.data?new Date(o.data).toLocaleDateString('pt-PT'):''}</div>
       </div>
-      <div class="modal-body" id="orc-det-corpo">
-        ${o.notas ? `<div style="font-size:12px;color:var(--t3);padding:10px 14px;border-radius:9px;background:rgba(255,255,255,.04);margin-bottom:16px;line-height:1.6">${o.notas}</div>` : ''}
-        ${linhaHtml('Mobiliário', o.linhas_mobiliario)}
-        ${o.tampo_desc||o.tampo_preco ? `<div class="orc-det-sec"><div class="orc-det-sec-titulo">Tampo</div><div class="orc-det-linha"><span style="flex:1">${o.tampo_desc||'Tampo'}</span><span style="font-family:var(--mono);font-size:12px;color:var(--t3)">${fmt(o.tampo_preco||0)}</span></div></div>` : ''}
-        ${linhaHtml('Eletrodomésticos', o.linhas_eletros)}
-        ${linhaHtml('Mão de Obra', o.linhas_maoobra)}
-        ${linhaHtml('Materiais', o.linhas_materiais)}
-        <div style="margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">
-          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t3);margin-bottom:6px">
-            <span>Total s/ IVA</span><span style="font-family:var(--mono)">${fmt(semIVA)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t3);margin-bottom:10px">
-            <span>IVA 23%</span><span style="font-family:var(--mono)">${fmt(semIVA*0.23)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;color:rgba(255,190,152,.95)">
-            <span>Total c/ IVA</span><span style="font-family:var(--mono)">${fmt(comIVA)}</span>
-          </div>
-        </div>
-        ${o.pc ? `<div style="margin-top:12px;font-size:10px;color:var(--t4)">Ref. PC Winner: ${o.pc}</div>` : ''}
+      <button class="modal-close" onclick="document.getElementById('orc-det').remove()">x</button>
+    </div>
+    <div class="modal-body">
+      ${o.notas?`<div style="font-size:12px;color:var(--t3);padding:10px 14px;border-radius:9px;background:rgba(255,255,255,.04);margin-bottom:14px;line-height:1.6">${o.notas}</div>`:''}
+      ${secH('Mobiliario',o.linhas_mobiliario)}
+      ${(o.tampo_desc||o.tampo_preco)?`<div style="margin-bottom:13px"><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,.06)">Tampo</div><div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:var(--t2)"><span>${o.tampo_desc||'Tampo'}</span><span style="font-family:var(--mono);color:var(--t3)">${fmt(o.tampo_preco||0)}</span></div></div>`:''}
+      ${secH('Eletrodomesticos',o.linhas_eletros)}
+      ${secH('Mao de Obra',o.linhas_maoobra)}
+      ${secH('Materiais',o.linhas_materiais)}
+      <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:13px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t3);margin-bottom:5px"><span>Total s/ IVA</span><span style="font-family:var(--mono)">${fmt(t)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t3);margin-bottom:9px"><span>IVA 23%</span><span style="font-family:var(--mono)">${fmt(t*0.23)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;color:rgba(255,190,152,.95)"><span>Total c/ IVA</span><span style="font-family:var(--mono)">${fmt(t*1.23)}</span></div>
       </div>
-      <div class="modal-footer" style="gap:8px">
-        <button class="btn-cancelar" onclick="document.getElementById('orc-modal-det').remove()">Fechar</button>
-        <button class="btn-sec" onclick="window.orcEditar('${o.id}');document.getElementById('orc-modal-det').remove()">✎ Editar</button>
-        <button class="btn-guardar" onclick="window.orcExportar('${o.id}')">⎘ Copiar Resumo</button>
-      </div>
-    </div>`;
-  document.body.appendChild(m);
-
-  // CSS detalhe
-  if (!document.getElementById('orc-det-css')) {
-    const st = document.createElement('style');
-    st.id = 'orc-det-css';
-    st.textContent = `.orc-det-sec{margin-bottom:14px}.orc-det-sec-titulo{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,.06)}.orc-det-linha{display:flex;align-items:flex-start;gap:12px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;color:var(--t2)}`;
-    document.head.appendChild(st);
-  }
+      ${o.pc?`<div style="margin-top:11px;font-size:10px;color:var(--t4)">Ref. PC Winner: ${o.pc}</div>`:''}
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancelar" onclick="document.getElementById('orc-det').remove()">Fechar</button>
+      <button class="btn-sec" onclick="window.orcEditar('${o.id}');document.getElementById('orc-det').remove()">✎ Editar</button>
+      <button class="btn-guardar" onclick="window.orcExportar('${o.id}')">⎘ Copiar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
 }
 
-// ════════════════════════════════════════════════
-// EXPORTAR — copiar resumo de texto
-// ════════════════════════════════════════════════
-export function orcExportar(id) {
-  const o = OS.lista.find(x => x.id === id);
-  if (!o) return;
-
-  const total  = calcTotal(o);
-  const comIVA = total * 1.23;
-
-  const linha = (label, linhas) => {
-    if (!linhas?.length) return '';
-    return `\n${label}:\n` + linhas.map(l=>`  ${l.desc||l.nome||''} — ${fmt((l.qty||1)*(l.preco||0))}`).join('\n');
+// ── Exportar ──────────────────────────────────
+function exportar(o) {
+  const t = total(o);
+  const s = (tit,linhas) => {
+    if(!linhas?.length) return '';
+    return `\n${tit}:\n`+linhas.map(l=>`  ${l.desc||l.nome||''} — ${fmt(l.preco||0)}`).join('\n');
   };
-
-  const txt = `ORÇAMENTO ${o.num||''}
-Cliente: ${o.cliente||''}
-Data: ${o.data||''}
-${o.notas ? '\n'+o.notas : ''}
-${'─'.repeat(40)}
-${linha('Mobiliário', o.linhas_mobiliario)}
-${o.tampo_preco ? `\nTampo:\n  ${o.tampo_desc||'Tampo'} — ${fmt(o.tampo_preco)}` : ''}
-${linha('Eletrodomésticos', o.linhas_eletros)}
-${linha('Mão de Obra', o.linhas_maoobra)}
-${linha('Materiais', o.linhas_materiais)}
-${'─'.repeat(40)}
-Total s/ IVA: ${fmt(total)}
-IVA 23%:      ${fmt(total*0.23)}
-TOTAL c/ IVA: ${fmt(comIVA)}
-${o.pc ? '\nRef. PC Winner: '+o.pc : ''}`.replace(/\n{3,}/g,'\n\n').trim();
-
-  navigator.clipboard.writeText(txt)
-    .then(() => window.wkToast?.('✓ Resumo copiado para a área de transferência'));
+  const txt = [
+    `ORCAMENTO ${o.num?'No '+o.num:''}`,
+    `Cliente: ${o.cliente||''}`,
+    `Data: ${o.data?new Date(o.data).toLocaleDateString('pt-PT'):''}`,
+    o.notas?'\n'+o.notas:'',
+    '\n'+'—'.repeat(36),
+    s('Mobiliario',o.linhas_mobiliario),
+    (o.tampo_desc||o.tampo_preco)?`\nTampo:\n  ${o.tampo_desc||''} — ${fmt(o.tampo_preco||0)}`:'',
+    s('Eletrodomesticos',o.linhas_eletros),
+    s('Mao de Obra',o.linhas_maoobra),
+    s('Materiais',o.linhas_materiais),
+    '\n'+'—'.repeat(36),
+    `Total s/ IVA:  ${fmt(t)}`,
+    `IVA 23%:       ${fmt(t*0.23)}`,
+    `TOTAL c/ IVA:  ${fmt(t*1.23)}`,
+    o.pc?`\nRef. PC: ${o.pc}`:'',
+  ].filter(Boolean).join('\n').replace(/\n{3,}/g,'\n\n').trim();
+  navigator.clipboard.writeText(txt).then(()=>window.wkToast?.('Resumo copiado'));
 }
 
-// ════════════════════════════════════════════════
-// CSS
-// ════════════════════════════════════════════════
+// ── CSS ───────────────────────────────────────
 function injectCSS() {
   if (document.getElementById('orc-css')) return;
   const st = document.createElement('style');
   st.id = 'orc-css';
-  st.textContent = `
-.orc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:4px 0}
-.orc-card{background:var(--glass-bg);border:1px solid var(--glass-brd);border-radius:14px;padding:16px;cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:8px}
-.orc-card:hover{border-color:var(--glass-brd2);background:rgba(255,255,255,.06);transform:translateY(-2px)}
-.orc-card-topo{display:flex;align-items:center;justify-content:space-between}
-.orc-card-num{font-family:var(--mono);font-size:11px;font-weight:700;color:rgba(196,97,42,.8)}
-.orc-estado{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:2px 9px;border-radius:99px}
-.orc-card-cliente{font-size:14px;font-weight:700;color:var(--t1);font-family:var(--serif)}
-.orc-card-data{font-size:10px;color:var(--t4)}
-.orc-card-total{font-family:var(--mono);font-size:18px;font-weight:800;color:rgba(255,190,152,.9);margin-top:4px}
-.orc-card-acoes{display:flex;gap:5px;justify-content:flex-end;margin-top:4px}`;
+  st.textContent = `.orc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:13px;padding:4px 0}.orc-card{background:var(--glass-bg);border:1px solid var(--glass-brd);border-radius:13px;padding:15px;cursor:pointer;transition:all .17s;display:flex;flex-direction:column;gap:6px}.orc-card:hover{border-color:var(--glass-brd2);transform:translateY(-2px)}.orc-card-topo{display:flex;align-items:center;justify-content:space-between}.orc-card-num{font-family:var(--mono);font-size:10px;font-weight:700;color:rgba(196,97,42,.75)}.orc-estado{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:2px 8px;border-radius:99px}.orc-card-cliente{font-family:var(--serif);font-size:14px;font-weight:700;color:var(--t1)}.orc-card-data{font-size:10px;color:var(--t4)}.orc-card-notas{font-size:11px;color:var(--t3);line-height:1.4}.orc-card-total{font-family:var(--mono);font-size:16px;font-weight:800;color:rgba(255,190,152,.9);margin-top:3px}.orc-card-acoes{display:flex;gap:5px;justify-content:flex-end;margin-top:3px}`;
   document.head.appendChild(st);
 }
 
-// ════════════════════════════════════════════════
-// API PÚBLICA
-// ════════════════════════════════════════════════
-window.orcAbrirNovo   = orcAbrirNovo;
-window.orcEditar      = orcEditar;
-window.orcGuardar     = orcGuardar;
-window.orcExportar    = orcExportar;
-window.orcAbrirDetalhe = orcAbrirDetalhe;
-
-// Init — chamado pelo main.js
-export async function orcInit() {
-  injectCSS();
-  await orcCarregar();
-  orcRender();
-}
+// ── API pública ───────────────────────────────
+window.orcNovo     = () => modal({});
+window.orcEditar   = id => { const o=OS.lista.find(x=>x.id===id); if(o) modal(o); };
+window.orcDetalhe  = id => { const o=OS.lista.find(x=>x.id===id); if(o) detalhe(o); };
+window.orcExportar = id => { const o=OS.lista.find(x=>x.id===id); if(o) exportar(o); };

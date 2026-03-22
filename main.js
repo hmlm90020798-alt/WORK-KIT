@@ -1080,6 +1080,7 @@ window.cliApagarHistorico = function() {
       ]);
       setView('app');
       document.querySelector('[data-tab="assistente"]')?.classList.add('active');
+      assistenteInit();
       ov.remove();
     } else {
       ov.remove();
