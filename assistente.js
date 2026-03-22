@@ -492,8 +492,7 @@ window.assLerPDF=async function(input){
           for(let i=1;i<=pdf.numPages;i++){
             const pg=await pdf.getPage(i);
             const content=await pg.getTextContent();
-            txt+=content.items.map(item=>item.str).join(' ')+'
-';
+            txt+=content.items.map(item=>item.str).join(' ')+'\n';
           }
           res(txt);
         } catch(err){rej(err);}
