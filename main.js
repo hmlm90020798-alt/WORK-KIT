@@ -8,6 +8,7 @@
 import { tampoInit, switchTampoTab, TAMPOS_DB, ANIGRACO, TRANSPORTE } from './tampos.js';
 import { eletroInit, switchEletroTab, ELETRO_DB, ELETRO_ESSENCIAIS  } from './eletros.js';
 import { moRender, moCarregarOrcamento, MO_SECCOES, MO_SECCAO_ORDEM  } from './maoobra.js';
+import { assistenteInit }                                              from './assistente.js';
 import { matInit, matCarregar }                                         from './materiais.js';
 import { initializeApp }                                 from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, doc, setDoc, getDoc, getDocs,
@@ -333,6 +334,7 @@ window.switchTab = function(tabId, btnEl) {
     else switchEletroTab('catalogo');
   }
   if (tabId === 'maoobra')    moRender();
+  if (tabId === 'assistente') assistenteInit();
   if (tabId === 'materiais')  matInit();
   if (tabId === 'cliente')    cliRender();
 };
@@ -1072,6 +1074,7 @@ window.cliApagarHistorico = function() {
       ]);
       setView('app');
       document.querySelector('[data-tab="assistente"]')?.classList.add('active');
+      assistenteInit();
       ov.remove();
     } else {
       ov.remove();
