@@ -175,6 +175,9 @@ export async function matCarregar() {
 }
 
 async function matGuardar(ref, dados) {
+  // Nota: matGuardarModal chama o Firestore directamente para poder
+  // controlar o fluxo (não fechar modal se falhar).
+  // Esta função interna mantém-se para uso futuro / imports externos.
   _overrides[ref] = dados;
   const idx = MATERIAIS_DB.findIndex(a => a.ref === ref);
   if (idx >= 0) Object.assign(MATERIAIS_DB[idx], dados);
@@ -185,6 +188,7 @@ async function matGuardar(ref, dados) {
   } catch(e) {
     window.wkToast?.('⚠️ Erro ao guardar material: ' + (e?.code || e?.message || ''));
     console.warn('materiais: guardar', e);
+    throw e; // FIX: re-lançar para que o chamador possa tratar o erro
   }
 }
 
@@ -502,10 +506,20 @@ function abrirModal(artigo) {
       </div>
       <div class="modal-footer">
         <button class="btn-cancelar" onclick="document.getElementById('mat-modal')?.remove()">Cancelar</button>
-        <button class="btn-guardar" onclick="window.matGuardarModal('${a.ref}', ${isNovo})">Guardar</button>
+        <button class="btn-guardar" id="mat-btn-guardar" data-ref="${a.ref}" data-novo="${isNovo}">Guardar</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
+
+  // FIX: usar addEventListener em vez de onclick inline
+  // Evita (1) isNovo chegar como string truthy "false" e
+  // (2) quebras de HTML por caracteres especiais na ref/nome
+  document.getElementById('mat-btn-guardar').addEventListener('click', function () {
+    const ref   = this.dataset.ref;
+    const isNov = this.dataset.novo === 'true'; // converte string → boolean correcto
+    window.matGuardarModal(ref, isNov);
+  });
+
   setTimeout(() => document.getElementById('mat-f-nome')?.focus(), 50);
 }
 
@@ -647,13 +661,19 @@ window.matToggleDetalhe = function(ref) {
 window.matAbrirNovo = function() { abrirModal(null); };
 
 window.matEditar = function(ref) {
+  // FIX: usar cópia do objecto para que edições no modal não mutam o DB em memória
+  // antes de o utilizador confirmar com Guardar
   const a = MATERIAIS_DB.find(x => x.ref === ref);
-  if (a) abrirModal(a);
+  if (a) abrirModal(structuredClone ? structuredClone(a) : { ...a });
 };
 
 window.matGuardarModal = async function(refOriginal, isNovo) {
+  // FIX: garantir que isNovo é sempre boolean, independentemente de como chegou
+  // (inline onclick passava a string "false" que é truthy em JS)
+  const _isNovo = isNovo === true || isNovo === 'true';
+
   const nome    = document.getElementById('mat-f-nome')?.value?.trim();
-  const ref     = isNovo
+  const ref     = _isNovo
     ? document.getElementById('mat-f-ref')?.value?.trim()
     : refOriginal;
   const familia = document.getElementById('mat-f-familia')?.value;
@@ -666,13 +686,34 @@ window.matGuardarModal = async function(refOriginal, isNovo) {
   if (!nome) { toast('⚠️ Nome obrigatório'); return; }
   if (!ref)  { toast('⚠️ Referência LM obrigatória'); return; }
 
-  const dados = { ref, familia, nome, preco, unid, lista, quando, url, ...(isNovo ? { _novo: true } : {}) };
-  document.getElementById('mat-modal')?.remove();
+  const dados = { ref, familia, nome, preco, unid, lista, quando, url, ...(_isNovo ? { _novo: true } : {}) };
 
-  await matGuardar(ref, dados);
+  // FIX: só fechar o modal e mostrar toast após tentativa de guardar no Firestore
+  // Assim o utilizador sabe se houve erro real, em vez de falso sucesso
+  const db = getDb();
+  if (db) {
+    try {
+      await setDoc(doc(db, COL_MAT, ref), dados);
+    } catch(e) {
+      const msg = e?.code === 'permission-denied'
+        ? '🔒 Sem permissão para guardar — verifica as Firestore Rules'
+        : `⚠️ Erro ao guardar: ${e?.code || e?.message || 'desconhecido'}`;
+      toast(msg);
+      console.error('[materiais] guardar modal', e);
+      return; // FIX: não fechar o modal nem actualizar DB local se Firestore falhou
+    }
+  }
+
+  // Só chega aqui se o Firestore guardou com sucesso (ou se não há DB — modo offline)
+  document.getElementById('mat-modal')?.remove();
+  _overrides[ref] = dados;
+  const idx = MATERIAIS_DB.findIndex(a => a.ref === ref);
+  if (idx >= 0) Object.assign(MATERIAIS_DB[idx], dados);
+  else MATERIAIS_DB.push({ ref, ...dados });
+
   renderMatChips();
   renderMatGrid();
-  toast(isNovo ? '✓ Artigo adicionado' : '✓ Artigo actualizado');
+  toast(_isNovo ? '✓ Artigo adicionado' : '✓ Artigo actualizado');
 };
 
 window.matConfirmarApagar = function(ref) {
